@@ -1,16 +1,16 @@
 module OpenStack
-module Image
+  module Image
 
-  class Connection
+    class Connection
 
-    attr_accessor   :connection
+      attr_accessor :connection
 
-    def initialize(connection)
-      @connection = connection
-      OpenStack::Authentication.init(@connection)
+      def initialize(connection)
+        @connection = connection
+        OpenStack::Authentication.init(@connection)
+      end
+
     end
 
   end
-
-end
 end
