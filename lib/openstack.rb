@@ -33,6 +33,7 @@ module OpenStack
   $:.unshift(File.dirname(__FILE__))
   require 'openstack/connection'
   require 'openstack/authentication'
+  require 'openstack/exceptions'
   require 'openstack/compute/connection'
   require 'openstack/compute/server'
   require 'openstack/compute/image'

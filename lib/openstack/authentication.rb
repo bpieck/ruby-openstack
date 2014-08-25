@@ -20,9 +20,26 @@ module OpenStack
 
   end
 
+  class Auth
+    def start_server_connection(tries = connection.retries, time = 3)
+      @server = Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(connection.auth_host, connection.auth_port)
+      if connection.auth_scheme == 'https'
+        @server.use_ssl = true
+        @server.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      @server.start
+      @server
+    rescue
+      puts "Can't connect to the server: #{tries} tries  to reconnect" if connection.is_debug
+      sleep time += 1
+      retry unless (tries -= 1) <= 0
+      raise OpenStack::Exception::Connection, "Unable to connect to  #{@server}"
+    end
+  end
 
   private
-  class AuthV20
+
+  class AuthV20 < Auth
     attr_reader :uri, :version, :connection
 
     def initialize(connection)
@@ -104,21 +121,6 @@ module OpenStack
       @token_response ||= start_server_connection.post(connection.auth_path.chomp('/')+'/tokens', auth_data, {'Content-Type' => 'application/json'})
     end
 
-    def start_server_connection(tries = connection.retries, time = 3)
-      @server = Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(connection.auth_host, connection.auth_port)
-      if connection.auth_scheme == 'https'
-        @server.use_ssl = true
-        @server.verify_mode = OpenSSL::SSL::VERIFY_NONE
-      end
-      @server.start
-      @server
-    rescue
-      puts "Can't connect to the server: #{tries} tries  to reconnect" if connection.is_debug
-      sleep time += 1
-      retry unless (tries -= 1) <= 0
-      raise OpenStack::Exception::Connection, "Unable to connect to  #{server}"
-    end
-
     def set_connection_attributes(uri, service)
       #grab version to check next time round for multi-version deployments
       @version = get_version_from_response(service)
@@ -163,29 +165,18 @@ module OpenStack
   end
 
 
-  class AuthV10
+  class AuthV10 < Auth
+
+    attr_reader :connection
 
     def initialize(connection)
+      @connection = connection
+      set_identity_data
+    end
 
-      tries = connection.retries
-      time = 3
-
+    def set_identity_data
       hdrhash = {'X-Auth-User' => connection.authuser, 'X-Auth-Key' => connection.authkey}
-      begin
-        server = Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(connection.auth_host, connection.auth_port)
-        if connection.auth_scheme == 'https'
-          server.use_ssl = true
-          server.verify_mode = OpenSSL::SSL::VERIFY_NONE
-        end
-        server.start
-      rescue
-        puts "Can't connect to the server: #{tries} tries  to reconnect" if connection.is_debug
-        sleep time += 1
-        retry unless (tries -= 1) <= 0
-        raise OpenStack::Exception::Connection, "Unable to connect to #{server}"
-      end
-
-      response = server.get(connection.auth_path, hdrhash)
+      response = start_server_connection.get(connection.auth_path, hdrhash)
 
       if (response.code =~ /^20./)
         connection.authtoken = response['x-auth-token']
@@ -205,128 +196,9 @@ module OpenStack
         connection.authok = false
         raise OpenStack::Exception::Authentication, "Authentication failed with response code #{response.code}"
       end
-      server.finish
+    ensure
+      @server.finish if @server.respond_to?(:started?) && @server.started?
     end
 
   end
-
-
-#============================
-# OpenStack::Exception
-#============================
-
-  class Exception
-
-    class ComputeError < StandardError
-
-      attr_reader :response_body
-      attr_reader :response_code
-
-      def initialize(message, code, response_body)
-        @response_code=code
-        @response_body=response_body
-        super(message)
-      end
-
-    end
-
-    class ComputeFault < ComputeError # :nodoc:
-    end
-    class ServiceUnavailable < ComputeError # :nodoc:
-    end
-    class Unauthorized < ComputeError # :nodoc:
-    end
-    class BadRequest < ComputeError # :nodoc:
-    end
-    class OverLimit < ComputeError # :nodoc:
-    end
-    class BadMediaType < ComputeError # :nodoc:
-    end
-    class BadMethod < ComputeError # :nodoc:
-    end
-    class ItemNotFound < ComputeError # :nodoc:
-    end
-    class BuildInProgress < ComputeError # :nodoc:
-    end
-    class ServerCapacityUnavailable < ComputeError # :nodoc:
-    end
-    class BackupOrResizeInProgress < ComputeError # :nodoc:
-    end
-    class ResizeNotAllowed < ComputeError # :nodoc:
-    end
-    class NotImplemented < ComputeError # :nodoc:
-    end
-    class Other < ComputeError # :nodoc:
-    end
-    class ResourceStateConflict < ComputeError # :nodoc:
-    end
-    class QuantumError < ComputeError # :nodoc:
-    end
-
-    # Plus some others that we define here
-
-    class ExpiredAuthToken < StandardError # :nodoc:
-    end
-    class MissingArgument < StandardError # :nodoc:
-    end
-    class InvalidArgument < StandardError # :nodoc:
-    end
-    class TooManyPersonalityItems < StandardError # :nodoc:
-    end
-    class PersonalityFilePathTooLong < StandardError # :nodoc:
-    end
-    class PersonalityFileTooLarge < StandardError # :nodoc:
-    end
-    class Authentication < StandardError # :nodoc:
-    end
-    class Connection < StandardError # :nodoc:
-    end
-
-    # In the event of a non-200 HTTP status code, this method takes the HTTP response, parses
-    # the JSON from the body to get more information about the exception, then raises the
-    # proper error.  Note that all exceptions are scoped in the OpenStack::Compute::Exception namespace.
-    def self.raise_exception(response)
-      return if response.code =~ /^20.$/
-      begin
-        fault = nil
-        info = nil
-        if response.body.nil? && response.code == '404' #HEAD ops no body returned
-          exception_class = self.const_get('ItemNotFound')
-          raise exception_class.new('The resource could not be found', '404', '')
-        else
-          JSON.parse(response.body).each_pair do |key, val|
-            fault=key
-            info=val
-          end
-          exception_class = self.const_get(fault[0, 1].capitalize+fault[1, fault.length])
-          raise exception_class.new((info['message'] || info), response.code, response.body)
-        end
-      rescue JSON::ParserError => parse_error
-        deal_with_faulty_error(response, parse_error)
-      rescue NameError
-        raise OpenStack::Exception::Other.new("The server returned status #{response.code}", response.code, response.body)
-      end
-    end
-
-    private
-
-    #e.g. os.delete("non-existant") ==> response.body is:
-    # "404 Not Found\n\nThe resource could not be found.\n\n   "
-    # which doesn't parse. Deal with such cases here if possible (JSON::ParserError)
-    def self.deal_with_faulty_error(response, parse_error)
-      case response.code
-        when '404'
-          klass = self.const_get('ItemNotFound')
-          msg = 'The resource could not be found'
-        when '409'
-          klass = self.const_get('ResourceStateConflict')
-          msg = 'There was a conflict with the state of the resource'
-        else
-          klass = self.const_get('Other')
-          msg = "Oops - not sure what happened: #{parse_error}"
-      end
-      raise klass.new(msg, response.code.to_s, response.body)
-    end
-  end
-
 end
