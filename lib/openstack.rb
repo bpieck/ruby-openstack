@@ -31,8 +31,8 @@ module OpenStack
   end
 
   $:.unshift(File.dirname(__FILE__))
-  require 'openstack/connection'
   require 'openstack/authentication'
+  require 'openstack/connection'
   require 'openstack/exceptions'
   require 'openstack/compute/connection'
   require 'openstack/compute/server'
@@ -40,19 +40,20 @@ module OpenStack
   require 'openstack/compute/flavor'
   require 'openstack/compute/address'
   require 'openstack/compute/personalities'
+  require 'openstack/identity/connection'
+  require 'openstack/image/connection'
   require 'openstack/metering/connection'
+  require 'openstack/network/connection'
+  require 'openstack/network/network'
+  require 'openstack/network/subnet'
+  require 'openstack/network/router'
+  require 'openstack/network/port'
   require 'openstack/swift/connection'
   require 'openstack/swift/container'
   require 'openstack/swift/storage_object'
   require 'openstack/volume/connection'
   require 'openstack/volume/volume'
   require 'openstack/volume/snapshot'
-  require 'openstack/image/connection'
-  require 'openstack/network/connection'
-  require 'openstack/network/network'
-  require 'openstack/network/subnet'
-  require 'openstack/network/router'
-  require 'openstack/network/port'
   require 'openstack/version'
   # Constants that set limits on server creation
   MAX_PERSONALITY_ITEMS = 5

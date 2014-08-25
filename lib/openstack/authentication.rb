@@ -35,6 +35,7 @@ module OpenStack
       retry unless (tries -= 1) <= 0
       raise OpenStack::Exception::Connection, "Unable to connect to  #{@server}"
     end
+
   end
 
   private
@@ -59,7 +60,7 @@ module OpenStack
         identity_data['access']['serviceCatalog'].each do |service|
           set_region_list(service['endpoints'], service)
           if type_fits?(service)
-            get_uri(service['endpoints'], service)
+            get_uri(service['endpoints'])
           end
         end
       else
@@ -73,29 +74,43 @@ module OpenStack
     def set_region_list(endpoints, service)
       endpoints.each do |endpoint|
         connection.regions_list[endpoint['region']] ||= []
-        connection.regions_list[endpoint['region']] << {service: service['type'], versionId: endpoint['versionId']}
+        connection.regions_list[endpoint['region']] << {service: service['type'], versionId: get_version_from_response(endpoint)}
       end
     end
 
-    def get_uri(endpoints, service)
+    def get_uri(endpoints)
       if connection.region
         uri_for_region(endpoints, connection.region)
       else
-        @uri = URI.parse(endpoints.first['publicURL'])
+        @uri = URI.parse(endpoints.first["#{connection.service_url_type || :public}URL"])
       end
       if uri.nil?
         raise OpenStack::Exception::Authentication, "No API endpoint for region #{connection.region}"
       else
         #if already got one version of endpoints
-        return false if @version && @version.to_f > get_version_from_response(service).to_f
-        set_connection_attributes(uri, service)
+        return false if @version && @version.to_f > get_version_from_response(endpoints.first).to_f
+        set_connection_attributes(uri, endpoints.first)
       end
     end
 
+    def auth_data
+      case connection.auth_method
+        when 'password'
+          JSON.generate({'auth' => {'passwordCredentials' => {'username' => connection.authuser, 'password' => connection.authkey}, connection.authtenant[:type] => connection.authtenant[:value]}})
+        when 'rax-kskey'
+          JSON.generate({'auth' => {'RAX-KSKEY:apiKeyCredentials' => {'username' => connection.authuser, 'apiKey' => connection.authkey}}})
+        when 'key'
+          JSON.generate({'auth' => {'apiAccessKeyCredentials' => {'accessKey' => connection.authuser, 'secretKey' => connection.authkey}, connection.authtenant[:type] => connection.authtenant[:value]}})
+        else
+          raise Exception::InvalidArgument, "Unrecognized auth method #{connection.auth_method}"
+      end
+    end
+
+
     def uri_for_region(endpoints, region)
       endpoints.each do |ep|
-        if ep['region'] and ep['region'].upcase == connection.region.upcase
-          @uri = URI.parse(ep['publicURL'])
+        if ep['region'] and ep['region'].upcase == region.upcase
+          @uri = URI.parse(ep["#{connection.service_url_type || :public}URL"])
           break
         end
       end
@@ -121,9 +136,9 @@ module OpenStack
       @token_response ||= start_server_connection.post(connection.auth_path.chomp('/')+'/tokens', auth_data, {'Content-Type' => 'application/json'})
     end
 
-    def set_connection_attributes(uri, service)
+    def set_connection_attributes(uri, endpoint)
       #grab version to check next time round for multi-version deployments
-      @version = get_version_from_response(service)
+      @version = get_version_from_response(endpoint)
       connection.service_host = uri.host
       connection.service_path = set_service_path(uri)
       connection.service_port = uri.port
@@ -139,27 +154,14 @@ module OpenStack
       end
     end
 
-    def auth_data
-      case connection.auth_method
-        when 'password'
-          JSON.generate({'auth' => {'passwordCredentials' => {'username' => connection.authuser, 'password' => connection.authkey}, connection.authtenant[:type] => connection.authtenant[:value]}})
-        when 'rax-kskey'
-          JSON.generate({'auth' => {'RAX-KSKEY:apiKeyCredentials' => {'username' => connection.authuser, 'apiKey' => connection.authkey}}})
-        when 'key'
-          JSON.generate({'auth' => {'apiAccessKeyCredentials' => {'accessKey' => connection.authuser, 'secretKey' => connection.authkey}, connection.authtenant[:type] => connection.authtenant[:value]}})
-        else
-          raise Exception::InvalidArgument, "Unrecognized auth method #{connection.auth_method}"
-      end
-    end
-
-    def get_version_from_response(service)
-      service['endpoints'].first['versionId'] || parse_version_from_endpoint(service['endpoints'].first['publicURL'])
+    def get_version_from_response(endpoint)
+      endpoint['versionId'] || parse_version_from_endpoint(endpoint['publicURL'])
     end
 
     #IN  --> https://az-2.region-a.geo-1.compute.hpcloudsvc.com/v1.1/46871569847393
     #OUT --> "1.1"
     def parse_version_from_endpoint(endpoint)
-      endpoint.match(/\/v(\d).(\d)/).to_s.sub("/v", '')
+      endpoint.match(/\/v(\d)(?:.(\d))?/).to_s.sub("/v", '')
     end
 
   end
@@ -174,9 +176,10 @@ module OpenStack
       set_identity_data
     end
 
+    private
+
     def set_identity_data
-      hdrhash = {'X-Auth-User' => connection.authuser, 'X-Auth-Key' => connection.authkey}
-      response = start_server_connection.get(connection.auth_path, hdrhash)
+      response = start_server_connection.get(connection.auth_path, auth_data)
 
       if (response.code =~ /^20./)
         connection.authtoken = response['x-auth-token']
@@ -198,6 +201,10 @@ module OpenStack
       end
     ensure
       @server.finish if @server.respond_to?(:started?) && @server.started?
+    end
+
+    def auth_data
+      {'X-Auth-User' => connection.authuser, 'X-Auth-Key' => connection.authkey}
     end
 
   end

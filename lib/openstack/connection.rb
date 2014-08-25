@@ -12,6 +12,7 @@ module OpenStack
     attr_accessor :service_path
     attr_accessor :service_port
     attr_accessor :service_scheme
+    attr_accessor :service_url_type
     attr_accessor :quantum_version
     attr_reader :retries
     attr_reader :auth_host
@@ -63,6 +64,8 @@ module OpenStack
       #call private constructor and grab instance vars
       connection = new(options)
       case connection.service_type
+        when 'identity'
+          OpenStack::Identity::Connection.new(connection)
         when 'compute'
           OpenStack::Compute::Connection.new(connection)
         when 'object-store'
@@ -92,6 +95,7 @@ module OpenStack
       @service_name = options[:service_name] || nil
       @service_type = options[:service_type] || 'compute'
       @default_service_path = options[:default_service_path] # set this option, if you want to overwrite empty paths from keystone
+      @service_url_type = options[:service_url_type]
       @region = options[:region] || @region = nil
       @regions_list = {} # this is populated during authentication - from the returned service catalogue
       @is_debug = options[:is_debug]
