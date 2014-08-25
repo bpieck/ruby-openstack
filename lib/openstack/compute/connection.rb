@@ -310,7 +310,7 @@ module OpenStack
       #    Stdout: '/tmp/tmp4kI12a/import.pub is not a public key file.\n'
       #
       def create_keypair(options)
-        raise OpenStack::Exception::NotImplemented.new("os-keypairs not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-keypairs"]
+        check_extension 'os-keypairs'
         raise OpenStack::Exception::MissingArgument, 'Keypair name must be supplied' unless (options[:name])
         data = JSON.generate(:keypair => options)
         response = @connection.req('POST', '/os-keypairs', {:data => data})
@@ -328,10 +328,21 @@ module OpenStack
       # Will raise OpenStack::Exception::ItemNotFound if specified keypair doesn't exist
       #
       def delete_keypair(keypair_name)
-        raise OpenStack::Exception::NotImplemented.new("os-keypairs not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-keypairs"]
+        check_extension 'os-keypairs'
         @connection.req('DELETE', "/os-keypairs/#{keypair_name}")
         true
       end
+
+      # os-simple-tenant-usage
+
+      def simple_tenant_usage(start_time=(Time.now - 3600), end_time=Time.now)
+        start_time = start_time.strftime('%Y-%m-%dT%H:%M:%S.%6N') if start_time.respond_to?(:strftime)
+        end_time = end_time.strftime('%Y-%m-%dT%H:%M:%S.%6N') if end_time.respond_to?(:strftime)
+        check_extension 'os-simple-tenant-usage', :security_groups
+        response = @connection.req('GET', "/os-simple-tenant-usage?start=#{start_time}&end=#{end_time}")
+        OpenStack.symbolize_keys(JSON.parse(response.body))[:tenant_usages]
+      end
+
 
       #Security Groups:
       #Returns a hash with the security group IDs as keys:
@@ -350,21 +361,21 @@ module OpenStack
       #     "1234" => { ... } }
       #
       def security_groups
-        raise OpenStack::Exception::NotImplemented.new("os-security-groups not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-security-groups"] or api_extensions[:security_groups]
+        check_extension 'os-security-groups', :security_groups
         response = @connection.req('GET', '/os-security-groups')
         res = OpenStack.symbolize_keys(JSON.parse(response.body))
         res[:security_groups].inject({}) { |result, c| result[c[:id].to_s] = c; result }
       end
 
       def security_group(id)
-        raise OpenStack::Exception::NotImplemented.new("os-security-groups not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-security-groups"] or api_extensions[:security_groups]
+        check_extension 'os-security-groups', :security_groups
         response = @connection.req('GET', "/os-security-groups/#{id}")
         res = OpenStack.symbolize_keys(JSON.parse(response.body))
         {res[:security_group][:id].to_s => res[:security_group]}
       end
 
       def create_security_group(name, description)
-        raise OpenStack::Exception::NotImplemented.new("os-security-groups not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-security-groups"] or api_extensions[:security_groups]
+        check_extension 'os-security-groups', :security_groups
         data = JSON.generate(:security_group => {'name' => name, 'description' => description})
         response = @connection.req('POST', '/os-security-groups', {:data => data})
         res = OpenStack.symbolize_keys(JSON.parse(response.body))
@@ -372,7 +383,7 @@ module OpenStack
       end
 
       def delete_security_group(id)
-        raise OpenStack::Exception::NotImplemented.new("os-security-groups not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-security-groups"] or api_extensions[:security_groups]
+        check_extension 'os-security-groups', :security_groups
         @connection.req('DELETE', "/os-security-groups/#{id}")
         true
       end
@@ -381,7 +392,7 @@ module OpenStack
       #observed behaviour against Openstack@HP cloud - can specify either cidr OR group_id as source, but not both
       #if both specified, the group is used and the cidr ignored.
       def create_security_group_rule(security_group_id, params)
-        raise OpenStack::Exception::NotImplemented.new("os-security-groups not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-security-groups"] or api_extensions[:security_groups]
+        check_extension 'os-security-groups', :security_groups
         params.merge!({:parent_group_id => security_group_id.to_s})
         response = @connection.req('POST', '/os-security-group-rules', {data: JSON.generate(:security_group_rule => params)})
         res = OpenStack.symbolize_keys(JSON.parse(response.body))
@@ -389,27 +400,27 @@ module OpenStack
       end
 
       def delete_security_group_rule(id)
-        raise OpenStack::Exception::NotImplemented.new("os-security-groups not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-security-groups"] or api_extensions[:security_groups]
+        check_extension 'os-security-groups', :security_groups
         @connection.req('DELETE', "/os-security-group-rules/#{id}")
         true
       end
 
 #VOLUMES - attach detach
       def attach_volume(server_id, volume_id, device_id)
-        raise OpenStack::Exception::NotImplemented.new("os-volumes not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-volumes"]
+        check_extension 'os-volumes'
         data = JSON.generate(:volumeAttachment => {'volumeId' => volume_id, 'device' => device_id})
         @connection.req('POST', "/servers/#{server_id}/os-volume_attachments", {data: data})
         true
       end
 
       def list_attachments(server_id)
-        raise OpenStack::Exception::NotImplemented.new("os-volumes not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-volumes"]
+        check_extension 'os-volumes'
         response = @connection.req('GET', "/servers/#{server_id}/os-volume_attachments")
         OpenStack.symbolize_keys(JSON.parse(response.body))
       end
 
       def detach_volume(server_id, attachment_id)
-        raise OpenStack::Exception::NotImplemented.new("os-volumes not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[:"os-volumes"]
+        check_extension 'os-volumes'
         @connection.req('DELETE', "/servers/#{server_id}/os-volume_attachments/#{attachment_id}")
         true
       end
@@ -420,7 +431,8 @@ module OpenStack
       def get_floating_ips
         check_extension 'os-floating-ips'
         response = @connection.req('GET', '/os-floating-ips')
-        compute_floating_ips_info JSON.parse(response.body)['floating_ips']
+         JSON.parse(response.body)['floating_ips']
+        res.inject([]) { |result, c| result<< OpenStack::Compute::FloatingIPAddress.new(c) }
       end
 
       alias :floating_ips :get_floating_ips
@@ -479,7 +491,7 @@ module OpenStack
       def get_floating_ips_bulk
         check_extension 'os-floating-ips-bulk'
         response = @connection.req('GET', '/os-floating-ips-bulk')
-        compute_floating_ips_info JSON.parse(response.body)['floating_ip_info']
+        compute_floating_ip_info JSON.parse(response.body)['floating_ip_info']
       end
 
       def create_floating_ips_bulk(opts)
@@ -500,12 +512,12 @@ module OpenStack
 
       private
 
-      def compute_floating_ips_info(response)
+      def compute_floating_ip_info(response)
         response.inject([]) { |result, c| result << OpenStack::Compute::FloatingIPInfo.new(c) }
       end
 
-      def check_extension(name)
-        raise OpenStack::Exception::NotImplemented.new("#{name} not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless api_extensions[name.to_sym]
+      def check_extension(*names)
+        raise OpenStack::Exception::NotImplemented.new("#{names} not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless names.any?{ |name| api_extensions[name.to_sym]}
         true
       end
 
