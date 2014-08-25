@@ -63,35 +63,35 @@ module OpenStack
   # Helper method to recursively symbolize hash keys.
   def self.symbolize_keys(obj)
     case obj
-    when Array
-      obj.inject([]){|res, val|
-        res << case val
-        when Hash, Array
-          symbolize_keys(val)
-        else
-          val
-        end
-        res
-      }
-    when Hash
-      obj.inject({}){|res, (key, val)|
-        nkey = case key
-        when String
-          key.to_sym
-        else
-          key
-        end
-        nval = case val
-        when Hash, Array
-          symbolize_keys(val)
-        else
-          val
-        end
-        res[nkey] = nval
-        res
-      }
-    else
-      obj
+      when Array
+        obj.inject([]) { |res, val|
+          res << case val
+                   when Hash, Array
+                     symbolize_keys(val)
+                   else
+                     val
+                 end
+          res
+        }
+      when Hash
+        obj.inject({}) { |res, (key, val)|
+          nkey = case key
+                   when String
+                     key.to_sym
+                   else
+                     key
+                 end
+          nval = case val
+                   when Hash, Array
+                     symbolize_keys(val)
+                   else
+                     val
+                 end
+          res[nkey] = nval
+          res
+        }
+      else
+        obj
     end
   end
 
@@ -106,7 +106,7 @@ module OpenStack
   # params = {:limit=>2, :marker="marios", :prefix=>"/"}
   # you want url = /container_name?limit=2&marker=marios
   def self.get_query_params(params, keys, url="")
-    set_keys = params.inject([]){|res, (k,v)| res << k if keys.include?(k) and not v.nil?; res }
+    set_keys = filter_keys(params, keys)
     return url if set_keys.empty?
     url = "#{url}?#{set_keys[0]}=#{params[set_keys[0]]}"
     set_keys.slice!(0)
@@ -114,6 +114,48 @@ module OpenStack
       url = "#{url}&#{k}=#{params[set_keys[0]]}"
     end
     url
+  end
+
+  def self.get_ceilometer_query(params, keys, url="")
+    keys = filter_keys(params, keys)
+    return url if keys.empty?
+    "#{url}?#{ceilometer_fields(keys)}&#{ceilometer_operations(keys)}&#{ceilometer_types(keys)}&#{ceilometer_values(keys, params)}"
+  end
+
+  def self.ceilometer_values(keys, params)
+    keys.map {|key| "q.value=#{params[key]}"}.join('&')
+  end
+
+  def self.ceilometer_fields(keys)
+    keys.map { |key| "q.field=#{ceilometer_field_for key}" }.join('&')
+  end
+
+  def self.ceilometer_operations(keys)
+    keys.map { |key| "q.op=#{ceilometer_operation_for key}" }.join('&')
+  end
+
+  def self.ceilometer_operation_for(key)
+    case key.to_sym
+      when :resource_id, :project_id
+        'eq'
+      when :start
+        'ge'
+      when :end
+        'le'
+    end
+  end
+
+  def self.ceilometer_field_for(key)
+    case key.to_sym
+      when :start, :end
+        'timestamp'
+      else
+        key
+    end
+  end
+
+  def self.filter_keys(params, keys)
+    params.inject([]) { |res, (k, v)| res << k if keys.include?(k) and not v.nil?; res }
   end
 
 end
