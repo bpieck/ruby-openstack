@@ -106,6 +106,7 @@ module OpenStack
   # params = {:limit=>2, :marker="marios", :prefix=>"/"}
   # you want url = /container_name?limit=2&marker=marios
   def self.get_query_params(params, keys, url="")
+    keys = [keys] unless keys.is_a?(Array)
     set_keys = filter_keys(params, keys)
     return url if set_keys.empty?
     url = "#{url}?#{set_keys[0]}=#{params[set_keys[0]]}"
@@ -116,14 +117,22 @@ module OpenStack
     url
   end
 
-  def self.get_ceilometer_query(params, keys, url="")
-    keys = filter_keys(params, keys)
-    return url if keys.empty?
-    "#{url}?#{ceilometer_fields(keys)}&#{ceilometer_operations(keys)}&#{ceilometer_types(keys)}&#{ceilometer_values(keys, params)}"
+  def self.get_ceilometer_query(params, ceilometer_keys, query_keys, url="")
+    query_keys = [query_keys] unless query_keys.is_a?(Array)
+    if keys.empty?
+      get_query_params(params, query_keys, url)
+    else
+      keys = filter_keys(params, ceilometer_keys)
+      if query_keys.empty?
+        "#{url}?#{ceilometer_fields(keys)}&#{ceilometer_operations(keys)}&#{ceilometer_types(keys)}&#{ceilometer_values(keys, params)}"
+      else
+        "#{get_query_params(params, query_keys, url)}&#{ceilometer_fields(keys)}&#{ceilometer_operations(keys)}&#{ceilometer_types(keys)}&#{ceilometer_values(keys, params)}"
+      end
+    end
   end
 
   def self.ceilometer_values(keys, params)
-    keys.map {|key| "q.value=#{params[key]}"}.join('&')
+    keys.map { |key| "q.value=#{params[key]}" }.join('&')
   end
 
   def self.ceilometer_fields(keys)
