@@ -36,7 +36,7 @@ module OpenStack
       # http://developer.openstack.org/api-ref-telemetry-v2.html
 
       def accumulated_bandwidth(options = {})
-        path = OpenStack.get_ceilometer_query(options, [:project_id, :resource_id, :start, :end], :limit, "#{@connection.service_path}/meters/bandwidth/statistics")
+        path = OpenStack.get_metering_query(options, [:project_id, :resource_id, :start, :end], :limit, "#{@connection.service_path}/meters/bandwidth/statistics")
         response = @connection.csreq('GET', @connection.service_host, path, @connection.service_port, @connection.service_scheme)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
         bandwidth_list = JSON.parse(response.body)
@@ -56,7 +56,7 @@ module OpenStack
       # http://developer.openstack.org/api-ref-telemetry-v2.html
 
       def sample_list(meter, options = {})
-        path = OpenStack.get_ceilometer_query(options, [:project_id, :resource_id, :start, :end], :limit, "#{@connection.service_path}/meters/#{meter}")
+        path = OpenStack.get_metering_query(options, [:project_id, :resource_id, :start, :end], :limit, "#{@connection.service_path}/meters/#{meter}")
         response = @connection.csreq('GET', @connection.service_host, path, @connection.service_port, @connection.service_scheme)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
         bandwidth_list = JSON.parse(response.body)

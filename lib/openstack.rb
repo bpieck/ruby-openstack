@@ -118,38 +118,38 @@ module OpenStack
     url
   end
 
-  def self.get_ceilometer_query(params, ceilometer_keys, query_keys, url="")
-    ceilometer_keys = [ceilometer_keys] unless ceilometer_keys.is_a?(Array)
-    keys = filter_keys(params, ceilometer_keys)
+  def self.get_metering_query(params, metering_keys, query_keys, url="")
+    metering_keys = [metering_keys] unless metering_keys.is_a?(Array)
+    keys = filter_keys(params, metering_keys)
     if keys.empty?
       get_query_params(params, query_keys, url)
     else
       other_params = get_query_params(params, query_keys)
       if other_params.empty?
-        "#{url}?#{ceilometer_fields(keys)}&#{ceilometer_operations(keys)}&#{ceilometer_types(keys)}&#{ceilometer_values(keys, params)}"
+        "#{url}?#{metering_fields(keys)}&#{metering_operations(keys)}&#{metering_types(keys)}&#{metering_values(keys, params)}"
       else
-        "#{url}#{other_params}&#{ceilometer_fields(keys)}&#{ceilometer_operations(keys)}&#{ceilometer_types(keys)}&#{ceilometer_values(keys, params)}"
+        "#{url}#{other_params}&#{metering_fields(keys)}&#{metering_operations(keys)}&#{metering_types(keys)}&#{metering_values(keys, params)}"
       end
     end
   end
 
-  def self.ceilometer_values(keys, params)
-    keys.map { |key| "q.value=#{ceilometer_value_for params[key]}" }.join('&')
+  def self.metering_values(keys, params)
+    keys.map { |key| "q.value=#{metering_value_for params[key]}" }.join('&')
   end
 
-  def self.ceilometer_fields(keys)
-    keys.map { |key| "q.field=#{ceilometer_field_for key}" }.join('&')
+  def self.metering_fields(keys)
+    keys.map { |key| "q.field=#{metering_field_for key}" }.join('&')
   end
 
-  def self.ceilometer_types(keys)
+  def self.metering_types(keys)
     keys.map { |key| "q.type=" }.join('&')
   end
 
-  def self.ceilometer_operations(keys)
-    keys.map { |key| "q.op=#{ceilometer_operation_for key}" }.join('&')
+  def self.metering_operations(keys)
+    keys.map { |key| "q.op=#{metering_operation_for key}" }.join('&')
   end
 
-  def self.ceilometer_value_for(value)
+  def self.metering_value_for(value)
     case value
       when Time
         value.strftime('%Y-%m-%dT%H:%M:%S.%6N')
@@ -158,7 +158,7 @@ module OpenStack
     end
   end
 
-  def self.ceilometer_operation_for(key)
+  def self.metering_operation_for(key)
     case key.to_sym
       when :resource_id, :project_id
         'eq'
@@ -169,7 +169,7 @@ module OpenStack
     end
   end
 
-  def self.ceilometer_field_for(key)
+  def self.metering_field_for(key)
     case key.to_sym
       when :start, :end
         'timestamp'
