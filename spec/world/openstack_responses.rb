@@ -53,6 +53,37 @@ module OpenStackResponses
     ]
   end
 
+  def create_metering_label_rule_hash
+    {
+        remote_ip_prefix: "10.0.1.0/24",
+        direction: "ingress",
+        metering_label_id: "e131d186-b02d-4c0b-83d5-0c0725c4f812",
+        id: "00e13b58-b4f2-4579-9c9c-7ac94615f9ae",
+        excluded: false
+    }
+  end
+
+  def create_metering_label_rule_response
+    {
+        metering_label_rule: create_metering_label_rule_hash
+    }.to_json
+  end
+
+  def create_metering_hash
+    {
+        tenant_id: "45345b0ee1ea477fac0f541b2cb79cd4",
+        description: "description of label1",
+        name: "label1",
+        id: "bc91b832-8465-40a7-a5d8-ba87de442266"
+    }
+  end
+
+  def create_metering_label_response
+    {
+        metering_label: create_metering_hash
+    }.to_json
+  end
+
   def simple_tenant_usage_response
     {
         "tenant_usages" => simple_tenant_usages_response

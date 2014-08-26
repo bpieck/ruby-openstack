@@ -1,11 +1,11 @@
 require 'spec_helper'
 
 OpenStack::Config = {
-  user: 'TestUser',
-  password: 'vD5UPlUZsGf54WR7k3mR',
-  authtenant_name: 'test_tenant',
-  auth_url: 'http://servers.api.openstack.org:15000/v2.0/',
-  metering_service_path: '/v2'
+    user: 'TestUser',
+    password: 'vD5UPlUZsGf54WR7k3mR',
+    authtenant_name: 'test_tenant',
+    auth_url: 'http://servers.api.openstack.org:15000/v2.0/',
+    metering_service_path: '/v2'
 }
 
 RSpec.describe OpenStack::Connector do
@@ -29,14 +29,22 @@ RSpec.describe OpenStack::Connector do
         with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
         to_return(:status => 200, :body => simple_tenant_usage_response, :headers => {})
     stub_request(:get, "http://servers.api.openstack.org:35357/v2.0/tenants").
-        with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent'=>'OpenStack Ruby API 1.2', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+        with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
         to_return(:status => 200, :body => tenants_response, :headers => {})
     stub_request(:get, "http://servers.api.openstack.org:35357/v2.0/tenants/testtenantid").
-        with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent'=>'OpenStack Ruby API 1.2', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+        with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
         to_return(:status => 200, :body => tenant_response, :headers => {})
+    stub_request(:post, "http://servers.api.openstack.org:9696/v2.0/metering-labels").
+        with(:body => "{\"tenant_id\":\"test#tenant\",\"name\":\"ingress\"}",
+             :headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
+        to_return(:status => 200, :body => create_metering_label_response, :headers => {})
+    stub_request(:post, "http://servers.api.openstack.org:9696/v2.0/metering-label-rules").
+        with(:body => "{\"metering_label_id\":\"test#label\",\"remote_ip_prefix\":\"0.0.0.0/24\"}",
+             :headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent'=>'OpenStack Ruby API 1.2', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+        to_return(:status => 200, :body => create_metering_label_rule_response, :headers => {})
   end
 
-  let(:connector) {OpenStack::Connector.new}
+  let(:connector) { OpenStack::Connector.new }
 
   context '#bandwidth' do
 
@@ -89,7 +97,7 @@ RSpec.describe OpenStack::Connector do
     it 'requests tenants from keystone' do
       connector.identity.tenants
       expect(WebMock).to have_requested(:get, "http://servers.api.openstack.org:35357/v2.0/tenants").
-                             with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent'=>'OpenStack Ruby API 1.2', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'})
+                             with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
     it 'parses the response' do
@@ -102,13 +110,34 @@ RSpec.describe OpenStack::Connector do
     it 'requests tenants from keystone' do
       connector.identity.tenant('testtenantid')
       expect(WebMock).to have_requested(:get, "http://servers.api.openstack.org:35357/v2.0/tenants/testtenantid").
-                             with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent'=>'OpenStack Ruby API 1.2', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'})
+                             with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
     it 'parses the response' do
       expect(connector.identity.tenant('testtenantid')).to eq(tenant_response_hash)
     end
 
+  end
+
+  context '#network' do
+
+    it 'creates a new metering label' do
+      connector.network.create_metering_label('test#tenant', :ingress)
+      expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:9696/v2.0/metering-labels').
+                             with(:body => "{\"tenant_id\":\"test#tenant\",\"name\":\"ingress\"}",
+                                  :headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
+    end
+
+    it 'parses the response' do
+      expect(connector.network.create_metering_label('test#tenant', :ingress)).to eq(create_metering_hash)
+    end
+
+    it 'creates a new metering label rule' do
+      connector.network.create_metering_label_rule('test#label', '0.0.0.0/24')
+      expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:9696/v2.0/metering-label-rules').
+                             with(:body => "{\"metering_label_id\":\"test#label\",\"remote_ip_prefix\":\"0.0.0.0/24\"}",
+                                  :headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
+    end
   end
 
 end

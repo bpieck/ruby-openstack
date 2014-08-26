@@ -152,6 +152,27 @@ module OpenStack
         OpenStack::Network::Router.new(JSON.parse(response.body)['router'])
       end
 
+      def create_metering_label(name, description= nil)
+        body_hash= {metering_label: {name: name}}
+        body_hash[:metering_label][:description]=description if description
+        data = JSON.generate body_hash
+        response = @connection.req('POST', '/metering/metering-labels', {:data => data})
+        OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+        metering_label = JSON.parse(response.body)
+        OpenStack.symbolize_keys metering_label['metering_label']
+      end
+
+      def create_metering_label_rule(label_id, remote_ip_prefix, direction = nil, excluded = nil)
+        body_hash= {metering_label_rule: {metering_label_id: label_id, remote_ip_prefix: remote_ip_prefix}}
+        body_hash[:metering_label_rule][:direction] = direction if direction && %w(ingress egress).include?(direction.to_s)
+        body_hash[:metering_label_rule][:excluded] = excluded.to_s if direction && %w(true false).include?(excluded.to_s)
+        data = JSON.generate body_hash
+        response = @connection.req('POST', '/metering/metering-label-rules', {:data => data})
+        OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+        metering_label_rule = JSON.parse(response.body)
+        OpenStack.symbolize_keys metering_label_rule['metering_label_rule']
+      end
+
       def get_router_id(name)
         routers.detect do |value|
           return value.id if value.name == name
