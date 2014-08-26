@@ -22,6 +22,9 @@ RSpec.describe OpenStack::Connector do
         with(headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
         to_return(status: 200, :body => bandwidth_response, :headers => {})
     @start, @end = (Time.now - 3600), Time.now
+    stub_request(:get, "http://servers.api.openstack.org:8777/v2/meters/bandwidth?q.field=timestamp&q.op=ge&q.type=&q.value=#{@start.strftime('%Y-%m-%dT%H:%M:%S.%6N')}").
+        with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
+        to_return(:status => 200, :body => bandwidth_response, :headers => {})
     stub_request(:get, "http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/os-simple-tenant-usage?end=#{@end.strftime('%Y-%m-%dT%H:%M:%S.%6N')}&start=#{@start.strftime('%Y-%m-%dT%H:%M:%S.%6N')}").
         with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
         to_return(:status => 200, :body => simple_tenant_usage_response, :headers => {})
@@ -50,9 +53,16 @@ RSpec.describe OpenStack::Connector do
                              with(headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
-    it 'parses the response' do
-      expect(connector.metering.accumulated_bandwidth).to eq(bandwidths_response_ary)
+    it 'requests bandwidth sample-list' do
+      connector.metering.bandwidth start: @start
+      expect(WebMock).to have_requested(:get, "http://servers.api.openstack.org:8777/v2/meters/bandwidth?q.field=timestamp&q.op=ge&q.type=&q.value=#{@start.strftime('%Y-%m-%dT%H:%M:%S.%6N')}").
+                             with(headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
+
+    it 'parses the response' do
+      expect(connector.metering.bandwidth(start: @start)).to eq(bandwidths_response_ary)
+    end
+
   end
 
   context '#simple_tenant_usage' do
