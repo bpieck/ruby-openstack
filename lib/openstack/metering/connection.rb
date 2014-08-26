@@ -32,11 +32,31 @@ module OpenStack
       end
 
       # Telemetry request for meter bandwidth
-      # set query and limit with for example: os.meters(q: '<query>', limit: 20)
+      # set query and limit with for example: os.accumulated_bandwidth(resource_id: 'some-id', limit: 20)
       # http://developer.openstack.org/api-ref-telemetry-v2.html
 
-      def bandwidth(options = {})
-        path = OpenStack.get_ceilometer_query(options, [:project_id, :resource_id, :message_id, :start, :end], :limit, "#{@connection.service_path}/meters/bandwidth/statistics")
+      def accumulated_bandwidth(options = {})
+        path = OpenStack.get_ceilometer_query(options, [:project_id, :resource_id, :start, :end], :limit, "#{@connection.service_path}/meters/bandwidth/statistics")
+        response = @connection.csreq('GET', @connection.service_host, path, @connection.service_port, @connection.service_scheme)
+        OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+        bandwidth_list = JSON.parse(response.body)
+        OpenStack.symbolize_keys bandwidth_list
+      end
+
+      # Telemetry sample-list request for meter bandwidth
+      # set query and limit with for example: os.bandwidth(resource_id: 'some-id', limit: 20)
+      # http://developer.openstack.org/api-ref-telemetry-v2.html
+
+      def bandwidth(options={})
+        sample_list 'bandwidth', options
+      end
+
+      # Telemetry sample-list request for variable meter
+      # set query and limit with for example: os.sample_list('<meter>', resource_id: 'some-id', limit: 20)
+      # http://developer.openstack.org/api-ref-telemetry-v2.html
+
+      def sample_list(meter, options = {})
+        path = OpenStack.get_ceilometer_query(options, [:project_id, :resource_id, :start, :end], :limit, "#{@connection.service_path}/meters/#{meter}")
         response = @connection.csreq('GET', @connection.service_host, path, @connection.service_port, @connection.service_scheme)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
         bandwidth_list = JSON.parse(response.body)

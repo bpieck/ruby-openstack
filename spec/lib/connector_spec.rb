@@ -38,20 +38,20 @@ RSpec.describe OpenStack::Connector do
   context '#bandwidth' do
 
     it 'authorizes #bandwidth first' do
-      connector.metering.bandwidth
+      connector.metering.accumulated_bandwidth
       expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:15000/v2.0/tokens').with(
                              :body => "{\"auth\":{\"passwordCredentials\":{\"username\":\"TestUser\",\"password\":\"vD5UPlUZsGf54WR7k3mR\"},\"tenantName\":\"test_tenant\"}}",
                              :headers => {'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'application/json', 'User-Agent' => 'Ruby'})
     end
 
     it 'requests bandwidth' do
-      connector.metering.bandwidth
+      connector.metering.accumulated_bandwidth
       expect(WebMock).to have_requested(:get, 'http://servers.api.openstack.org:8777/v2/meters/bandwidth/statistics').
                              with(headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => 'OpenStack Ruby API 1.2', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
     it 'parses the response' do
-      expect(connector.metering.bandwidth).to eq(bandwidths_response_ary)
+      expect(connector.metering.accumulated_bandwidth).to eq(bandwidths_response_ary)
     end
   end
 
