@@ -493,6 +493,14 @@ See the class definitions for documentation on specific methods and operations.
   >> quantum.delete_port("f0db2c95-9449-4eb3-8b12-c66b23c8de41")
   => true
 
+  #Add metering label:
+  >> quantum.create_metering_label('name', {tenant_id: 'tenant', description: 'this describes the label'})
+  => {:tenant_id => "tenant", :description => "this describes the label", :tenant_id => "tenant", :id => "label#id"}
+
+  #Add metering label rule:
+  >> quantum.create_metering_label('label#id', '0.0.0.0/24', direction: 'ingress', excluded: true)
+  => {:remote_ip_prefix => "0.0.0.0/24", :direction => "ingress", :metering_label_id => "label#id", :id => "00e13b58-b4f2-4579-9c9c-7ac94615f9ae", :excluded => true}
+
 == Shortcut with OpenStack::Connector
 
 Use OpenStack::Connector as Shortcut for several connections with same configuration. First define OpenStack::Config as a constant Hash with keys auth_url, authtenant_name, password, user and optional keys: <service>_service_path: SERVICE_PATH (with service out of identity, compute, network and metering).
