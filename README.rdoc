@@ -53,6 +53,19 @@ Other parameters for the create method:
   irb(main):005:0> os.connection.regions_list["region-a.geo-1"]
     => [{:service=>"object-store", :versionId=>"1.0"}, {:service=>"identity", :versionId=>"2.0"}]
 
+if you need a special url type for your service, set service_url_type on :admin, :internal - or use default :public (:admin will be used automatically in identity connection, if you request tenants).
+
+  irb(main):004:0> os = OpenStack::Connection.create({:username => "AWHFDADHJ32EL6V23GFK", :api_key=>"jd823jFDJEY2/82jfhYteG52AKJAUEY184JHRfeR", :auth_method=> "key", :auth_url => "https://regionerer-g.go-bar.identity.dacloudfoo.herpy:13327/v2.0/", :authtenant_id =>"482195756462871", :service_type=>"identity", service_url_part: :admin })
+
+      => #<OpenStack::Swift::Connection:0xb72ff2a8 @connection=#<OpenStack::Connection:0xb72ff460 @service_scheme="https", @auth_host="regionerer-g.go-bar.identity.dacloudfoo.herpy", @http={}, @service_name=nil, @authuser="AWHFDADHJ32EL6V23GFK", @proxy_port=nil, @auth_path="/v2.0/", @authtenant={:type=>"tenantId", :value=>"482195756462871"}, @service_port=443, @authkey="jd823jFDJEY2/82jfhYteG52AKJAUEY184JHRfeR", @authok=true, @service_type="object-store", @auth_method="key", @auth_scheme="https", @service_host="region-a.geo-1.objects.dacloudfoo.herpy", @is_debug=nil, @proxy_host=nil, @service_path="/v2.0", @auth_port=45357, @auth_url="https://regionerer-g.go-bar.identity.dacloudfoo.herpy:13327/v2.0/", @region=nil, @authtoken="Auth_543254fdsasabd546543a3", @retry_auth=nil>>
+
+
+if you have to overwrite the service_path, when your openstack implementation does not respond with version-path, use default_service_path. This overwrites from identity gotten parsed service_path, when whis it's an empty String:
+
+  irb(main):004:0> os = OpenStack::Connection.create({:username => "AWHFDADHJ32EL6V23GFK", :api_key=>"jd823jFDJEY2/82jfhYteG52AKJAUEY184JHRfeR", :auth_method=> "key", :auth_url => "https://regionerer-g.go-bar.identity.dacloudfoo.herpy:13327/v2.0/", :authtenant_id =>"482195756462871", :service_type=>"network", default_service_path: '/v2' })
+
+      => #<OpenStack::Swift::Connection:0xb72ff2a8 @connection=#<OpenStack::Connection:0xb72ff460 @service_scheme="https", @auth_host="regionerer-g.go-bar.identity.dacloudfoo.herpy", @http={}, @service_name=nil, @authuser="AWHFDADHJ32EL6V23GFK", @proxy_port=nil, @auth_path="/v2.0/", @authtenant={:type=>"tenantId", :value=>"482195756462871"}, @service_port=443, @authkey="jd823jFDJEY2/82jfhYteG52AKJAUEY184JHRfeR", @authok=true, @service_type="object-store", @auth_method="key", @auth_scheme="https", @service_host="region-a.geo-1.objects.dacloudfoo.herpy", @is_debug=nil, @proxy_host=nil, @service_path="/v2", @auth_port=35357, @auth_url="https://regionerer-g.go-bar.identity.dacloudfoo.herpy:13327/v2.0/", @region=nil, @authtoken="Auth_543254fdsasabd546543a3", @retry_auth=nil>>
+
 
 == Examples
 
@@ -236,6 +249,36 @@ See the class definitions for documentation on specific methods and operations.
   #Detach floating IP from server - hash param as above for attach
   irb(main):014:0> nova.detach_floating_ip({:server_id=>"73c12492-e966-4af0-a5e9-b5d1e436fe61", :ip_id=>"3932"})
   => true
+
+== Examples for Metering:
+
+  os = OpenStack::Connection.create(:username => USERNAME, :api_key => API_KEY, :authtenant => TENANT, :auth_url => API_URL, :service_type => "metering")
+
+  os.bandwidth(projcet_id: TENANT, resource_id: LABEL, limit: 2)
+  => [{:counter_name=>"bandwidth",
+       :user_id=>nil,
+       :resource_id=>"112be531-7b7d-4268-90aa-a7016dd75643",
+       :timestamp=>"2014-08-25T22:04:53.434366",
+       :recorded_at=>"2014-08-25T22:04:53.465973",
+       :message_id=>"d77b49a8-2ca3-11e4-ba55-90e2ba551205",
+       :source=>"openstack",
+       :counter_unit=>"B",
+       :counter_volume=>0.0,
+       :project_id=>TENANT,
+       :resource_metadata=>{:event_type=>"l3.meter", :tenant_id=>"474fcdd4d1c14fada4fa20444b00362e", :first_update=>"1408705999", :bytes=>"0", :label_id=>"112be531-7b7d-4268-90aa-a7016dd75643", :last_update=>"1408973559", :host=>"metering.node68", :time=>"0", :pkts=>"0"},
+       :counter_type=>"delta"},
+      {:counter_name=>"bandwidth",
+       :user_id=>nil,
+       :resource_id=>"6b704a3d-ff3a-4b53-a1b9-ae237e15681a",
+       :timestamp=>"2014-08-25T22:04:53.426423",
+       :recorded_at=>"2014-08-25T22:04:53.446141",
+       :message_id=>"d77a56a6-2ca3-11e4-ba55-90e2ba551205",
+       :source=>"openstack",
+       :counter_unit=>"B",
+       :counter_volume=>0.0,
+       :project_id=>TENANT,
+       :resource_metadata=>{:event_type=>"l3.meter", :tenant_id=>"474fcdd4d1c14fada4fa20444b00362e", :first_update=>"1408705999", :bytes=>"0", :label_id=>"6b704a3d-ff3a-4b53-a1b9-ae237e15681a", :last_update=>"1408973559", :host=>"metering.node68", :time=>"0", :pkts=>"0"},
+       :counter_type=>"delta"}]
 
 
 == Examples for Volumes and Snaphots:
@@ -449,6 +492,27 @@ See the class definitions for documentation on specific methods and operations.
   #Delete a Port:
   >> quantum.delete_port("f0db2c95-9449-4eb3-8b12-c66b23c8de41")
   => true
+
+== Shortcut with OpenStack::Connector
+
+Use OpenStack::Connector as Shortcut for several connections with same configuration. First define OpenStack::Config as a constant Hash with keys auth_url, authtenant_name, password, user and optional keys: <service>_service_path: SERVICE_PATH (with service out of identity, compute, network and metering).
+
+  OpenStack::Config = {
+    auth_url: AUTH_URL,
+    authtenant_name: AUTH_TENANT,
+    password: PASSWORD,
+    user: USERNAME
+  }
+
+  def connector
+    @connector ||= OpenStack::Connector.new
+  end
+
+  connector.compute.simple_tenant_usages
+  connector.identity.tenants
+  connector.metering.bandwidht project_id: PROJECT_ID
+  connector.network.list_networks
+  ...
 
 == Authors
 
