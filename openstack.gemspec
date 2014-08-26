@@ -62,6 +62,8 @@ Gem::Specification.new do |s|
       s.add_development_dependency('mocha')
       s.add_development_dependency('rake')
       s.add_development_dependency('test-unit')
+      s.add_development_dependency('rspec')
+      s.add_development_dependency('webmock')
       s.add_runtime_dependency('json')
     else
       s.add_dependency('mocha')
