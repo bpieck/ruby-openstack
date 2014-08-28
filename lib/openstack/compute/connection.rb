@@ -57,6 +57,8 @@ module OpenStack
       # hash, which are verbatim strings.
       #
       # You can also provide :limit and :offset parameters to handle pagination.
+      # And you can filter with :host, :status, :image, :flavor, :marker and :name options as in http://developer.openstack.org/api-ref-compute-v2-ext.html
+      # value for :changes_since can be an instance of Time.
       #   >> cs.list_servers_detail
       #   => [{:name=>"MyServer", :addresses=>{:public=>["67.23.42.37"], :private=>["10.176.241.237"]}, :metadata=>{"MyData" => "Valid"}, :imageRef=>10, :progress=>100, :hostId=>"36143b12e9e48998c2aef79b50e144d2", :flavorRef=>1, :id=>110917, :status=>"ACTIVE"}]
       #
@@ -64,12 +66,13 @@ module OpenStack
       #   => [{:status=>"ACTIVE", :imageRef=>10, :progress=>100, :metadata=>{}, :addresses=>{:public=>["x.x.x.x"], :private=>["x.x.x.x"]}, :name=>"demo-standingcloud-lts", :id=>168867, :flavorRef=>1, :hostId=>"xxxxxx"},
       #       {:status=>"ACTIVE", :imageRef=>8, :progress=>100, :metadata=>{}, :addresses=>{:public=>["x.x.x.x"], :private=>["x.x.x.x"]}, :name=>"demo-aicache1", :id=>187853, :flavorRef=>3, :hostId=>"xxxxxx"}]
       def list_servers_detail(options = {})
-        path = OpenStack.paginate(options).empty? ? "#{@connection.service_path}/servers/detail" : "#{@connection.service_path}/servers/detail?#{OpenStack.paginate(options)}"
-        response = @connection.csreq("GET", @connection.service_host, path, @connection.service_port, @connection.service_scheme)
+        options.delete :status unless %w(ACTIVE ERROR SHUTOFF).include?(options[:status])
+        path = OpenStack.get_query_params options, [:limit, :offset, :host, :all_tenants, :changes_sinc, :image, :flavor, :marker, :namee, :status], "#{@connection.service_path}/servers/detail"
+        response = @connection.csreq('GET', @connection.service_host, path, @connection.service_port, @connection.service_scheme)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
-        json_server_list = JSON.parse(response.body)["servers"]
+        json_server_list = JSON.parse(response.body)['servers']
         json_server_list.each do |server|
-          server["addresses"] = OpenStack::Compute::Address.fix_labels(server["addresses"])
+          server['addresses'] = OpenStack::Compute::Address.fix_labels(server['addresses'])
         end
         OpenStack.symbolize_keys(json_server_list)
       end

@@ -110,10 +110,10 @@ module OpenStack
     keys = [keys] unless keys.is_a?(Array)
     set_keys = filter_keys(params, keys)
     return url if set_keys.empty?
-    url = "#{url}?#{set_keys[0]}=#{params[set_keys[0]]}"
+    url = "#{url}?#{set_keys[0]}=#{value_for params[set_keys[0]]}"
     set_keys.slice!(0)
     set_keys.each do |k|
-      url = "#{url}&#{k}=#{params[set_keys[0]]}"
+      url = "#{url}&#{k}=#{value_for params[set_keys[0]]}"
     end
     url
   end
@@ -134,7 +134,7 @@ module OpenStack
   end
 
   def self.metering_values(keys, params)
-    keys.map { |key| "q.value=#{metering_value_for params[key]}" }.join('&')
+    keys.map { |key| "q.value=#{value_for params[key]}" }.join('&')
   end
 
   def self.metering_fields(keys)
@@ -149,7 +149,7 @@ module OpenStack
     keys.map { |key| "q.op=#{metering_operation_for key}" }.join('&')
   end
 
-  def self.metering_value_for(value)
+  def self.value_for(value)
     case value
       when Time
         value.strftime('%Y-%m-%dT%H:%M:%S.%6N')
