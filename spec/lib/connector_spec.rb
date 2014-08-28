@@ -158,6 +158,34 @@ RSpec.describe OpenStack::Connector do
 
   end
 
+  context '#migration' do
+    before do
+      stub_request(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').
+          with(
+          headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
+          body: '{"migrate":null}'
+      ).
+          to_return(:status => 202, :body => nil, :headers => {})
+    end
+
+    it 'authorizes migration first' do
+      connector.compute.migrate('0443e9a1254044d8b99f35eace132080')
+      expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:15000/v2.0/tokens').with(
+                             :body => "{\"auth\":{\"passwordCredentials\":{\"username\":\"TestUser\",\"password\":\"vD5UPlUZsGf54WR7k3mR\"},\"tenantName\":\"test_tenant\"}}",
+                             :headers => {'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'application/json', 'User-Agent' => 'Ruby'})
+    end
+
+    it 'requests migration' do
+      connector.compute.migrate('0443e9a1254044d8b99f35eace132080')
+      expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').
+                             with(
+                             headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
+                             body: '{"migrate":null}'
+                         )
+    end
+
+  end
+
   context '#simple_tenant_usage' do
 
     before do

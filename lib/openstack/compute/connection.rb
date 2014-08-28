@@ -336,6 +336,31 @@ module OpenStack
         true
       end
 
+      # server-actions
+      #
+      # migrate migrates a server to a host. The scheduler chooses the host.
+
+      def migrate(server_id)
+        data = JSON.generate(migrate: nil)
+        @connection.req('POST', "/servers/#{server_id}/action", {:data => data})
+        true
+      end
+
+      # live_migrate migrates a server to a host.
+      # Possible options: :host (name of host, where server will be migrated to), :block_migration (true or false), :disk_over_commit (true or false)
+      #
+      # usage: os.live_migrate('3700e915-536a-458a-a57d-31b89999e3e7', host: HOST_NAME, block_migration: true, disk_over_commit: true)
+
+      def live_migrate(server_id, options={})
+        data = {'os-migrateLive' => {}}
+        data['os-migrateLive'][:host] = options[:host] unless options[:host].nil?
+        data['os-migrateLive'][:block_migration] = options[:block_migration] if [true, false].include?(options[:block_migration])
+        data['os-migrateLive'][:disk_over_commit] = options[:disk_over_commit] if [true, false].include?(options[:disk_over_commit])
+        @connection.req('POST', "/servers/#{server_id}/action", {:data => JSON.generate(data)})
+        true
+      end
+
+
       # os-simple-tenant-usage
 
       def simple_tenant_usage(start_time=(Time.now - 3600), end_time=Time.now, tenant_id=nil)
