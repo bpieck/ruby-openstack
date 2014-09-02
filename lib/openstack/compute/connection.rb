@@ -353,9 +353,17 @@ module OpenStack
 
       def live_migrate(server_id, options={})
         data = {'os-migrateLive' => {}}
-        data['os-migrateLive'][:host] = options[:host] unless options[:host].nil?
-        data['os-migrateLive'][:block_migration] = options[:block_migration] if [true, false].include?(options[:block_migration])
-        data['os-migrateLive'][:disk_over_commit] = options[:disk_over_commit] if [true, false].include?(options[:disk_over_commit])
+        data['os-migrateLive'][:host] = options[:host]
+        data['os-migrateLive'][:block_migration] = if [true, false].include?(options[:block_migration])
+                                                     options[:block_migration]
+                                                   else
+                                                     false
+                                                   end
+        data['os-migrateLive'][:disk_over_commit] = if [true, false].include?(options[:disk_over_commit])
+                                                      options[:disk_over_commit]
+                                                    else
+                                                      false
+                                                    end
         @connection.req('POST', "/servers/#{server_id}/action", {:data => JSON.generate(data)})
         true
       end
@@ -459,7 +467,7 @@ module OpenStack
       def get_floating_ips
         check_extension 'os-floating-ips'
         response = @connection.req('GET', '/os-floating-ips')
-         JSON.parse(response.body)['floating_ips']
+        JSON.parse(response.body)['floating_ips']
         res.inject([]) { |result, c| result<< OpenStack::Compute::FloatingIPAddress.new(c) }
       end
 
@@ -479,7 +487,7 @@ module OpenStack
       def create_floating_ip(opts={})
         check_extension 'os-floating-ips'
         data = opts[:pool] ? JSON.generate(opts) : JSON.generate({pool: nil})
-        response = @connection.req('POST', '/os-floating-ips', {data:  data})
+        response = @connection.req('POST', '/os-floating-ips', {data: data})
         OpenStack::Compute::FloatingIPAddress.new JSON.parse(response.body)['floating_ip']
       end
 
@@ -493,20 +501,20 @@ module OpenStack
       end
 
       #add or attach a floating IP to a runnin g server
-      def attach_floating_ip(opts={server_id:  '', ip_id:  ''})
+      def attach_floating_ip(opts={server_id: '', ip_id: ''})
         check_extension('os-floating-ips')
         addr = get_floating_ip(opts[:ip_id]).ip
-        data = JSON.generate({addFloatingIp:  {address:  addr}})
-        @connection.req('POST', "/servers/#{opts[:server_id]}/action", {data:  data})
+        data = JSON.generate({addFloatingIp: {address: addr}})
+        @connection.req('POST', "/servers/#{opts[:server_id]}/action", {data: data})
         true
       end
 
-      def detach_floating_ip(opts={server_id:  '', ip_id:  ''})
+      def detach_floating_ip(opts={server_id: '', ip_id: ''})
         check_extension('os-floating-ips')
         #first get the address:
         addr = get_floating_ip(opts[:ip_id]).ip
-        data = JSON.generate({removeFloatingIp:  {address:  addr}})
-        @connection.req('POST', "/servers/#{opts[:server_id]}/action", {data:  data})
+        data = JSON.generate({removeFloatingIp: {address: addr}})
+        @connection.req('POST', "/servers/#{opts[:server_id]}/action", {data: data})
         true
       end
 
@@ -525,7 +533,7 @@ module OpenStack
       def create_floating_ips_bulk(opts)
         raise ArgumentError, 'Should not be empty' if opts.empty?
         check_extension 'os-floating-ips-bulk'
-        response = @connection.req('POST', '/os-floating-ips-bulk', {data: JSON.generate({floating_ips_bulk_create:  opts})})
+        response = @connection.req('POST', '/os-floating-ips-bulk', {data: JSON.generate({floating_ips_bulk_create: opts})})
         JSON.parse(response.body)['floating_ips_bulk_create']
       end
 
@@ -545,7 +553,7 @@ module OpenStack
       end
 
       def check_extension(*names)
-        raise OpenStack::Exception::NotImplemented.new("#{names} not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless names.any?{ |name| api_extensions[name.to_sym]}
+        raise OpenStack::Exception::NotImplemented.new("#{names} not implemented by #{@connection.http.keys.first}", 501, "NOT IMPLEMENTED") unless names.any? { |name| api_extensions[name.to_sym] }
         true
       end
 
