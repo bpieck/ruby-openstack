@@ -376,7 +376,12 @@ module OpenStack
         end_time = end_time.strftime('%Y-%m-%dT%H:%M:%S.%6N') if end_time.respond_to?(:strftime)
         check_extension 'os-simple-tenant-usage', :security_groups
         response = @connection.req('GET', "/os-simple-tenant-usage#{"/#{tenant_id}" if tenant_id}?start=#{start_time}&end=#{end_time}")
-        OpenStack.symbolize_keys(JSON.parse(response.body))[:tenant_usage]
+        response_hash = OpenStack.symbolize_keys(JSON.parse(response.body))
+        if tenant_id
+          response_hash[:tenant_usage]
+        else
+          response_hash[:tenant_usages]
+        end
       end
 
 

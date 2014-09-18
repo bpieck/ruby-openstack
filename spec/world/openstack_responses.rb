@@ -103,7 +103,7 @@ module OpenStackResponses
     }.to_json
   end
 
-  def simple_tenant_usages_response
+  def simple_tenants_usages_response
     [
         {
             start: "2012-10-08T21:10:44.587336",
@@ -115,6 +115,47 @@ module OpenStackResponses
             total_vcpus_usage: 1.0
         }
     ]
+  end
+
+  def simple_tenant_usages_response(tenant_id)
+    {
+        :total_memory_mb_usage => 106496.0,
+        :total_vcpus_usage => 52.0,
+        :start => "2014-09-14T00:00:00.000000",
+        :tenant_id => tenant_id,
+        :stop => "2014-09-14T01:00:00.000000",
+        :server_usages =>
+            [
+                {
+                    :instance_id => "8f3761c6-ac2a-4bfb-bb77-e0e17f09f7d2",
+                    :uptime => 2566220,
+                    :started_at => "2014-08-19T20:40:39.000000",
+                    :ended_at => nil,
+                    :memory_mb => 2048,
+                    :tenant_id => "474fcdd4d1c14fada4fa20444b00362e",
+                    :state => "suspended",
+                    :hours => 1.0,
+                    :vcpus => 1,
+                    :flavor => "m1.small",
+                    :local_gb => 20,
+                    :name => "test2"
+                },
+                {
+                    :instance_id => "321cfe66-3687-40dc-b32e-421b6efa55ff",
+                    :uptime => 2345139,
+                    :started_at => "2014-08-22T10:05:20.000000",
+                    :ended_at => nil,
+                    :memory_mb => 2048,
+                    :tenant_id => "474fcdd4d1c14fada4fa20444b00362e",
+                    :state => "active",
+                    :hours => 1.0,
+                    :vcpus => 1,
+                    :flavor => "m1.small",
+                    :local_gb => 20,
+                    :name => "test"
+                }
+            ]
+    }
   end
 
   def create_metering_label_rule_hash
@@ -148,9 +189,15 @@ module OpenStackResponses
     }.to_json
   end
 
-  def simple_tenant_usage_response
+  def simple_tenant_usage_response(tenant_id)
     {
-        "tenant_usage" => simple_tenant_usages_response
+        "tenant_usage" => simple_tenant_usages_response(tenant_id)
+    }.to_json
+  end
+
+  def simple_tenants_usage_response
+    {
+        "tenant_usages" => simple_tenants_usages_response
     }.to_json
   end
 
