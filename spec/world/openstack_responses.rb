@@ -150,7 +150,7 @@ module OpenStackResponses
 
   def simple_tenant_usage_response
     {
-        "tenant_usages" => simple_tenant_usages_response
+        "tenant_usage" => simple_tenant_usages_response
     }.to_json
   end
 
