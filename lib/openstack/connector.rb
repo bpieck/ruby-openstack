@@ -32,8 +32,8 @@ module OpenStack
       end
     end
 
-    %w(compute identity network metering).each do |service|
-      define_method service do
+    %w(compute identity network metering object-store).each do |service|
+      define_method service.gsub('-','_') do
         OpenStack::Connection.create username: OpenStack::Config[:user],
                                      api_key: OpenStack::Config[:password],
                                      auth_method: 'password',
