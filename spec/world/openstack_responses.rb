@@ -105,67 +105,67 @@ module OpenStackResponses
 
   def endpoints_response_ary
     [
-            {
-                id: 1,
-                tenantId: "1",
-                region: "North",
-                type: "compute",
-                publicURL: "https://compute.north.public.com/v1",
-                internalURL: "https://compute.north.internal.com/v1",
-                adminURL: "https://compute.north.internal.com/v1",
-                versionId: "1",
-                versionInfo: "https://compute.north.public.com/v1/",
-                versionList: "https://compute.north.public.com/"
-            },
-            {
-                id: 2,
-                tenantId: "1",
-                region: "South",
-                type: "compute",
-                publicURL: "https://compute.north.public.com/v1",
-                internalURL: "https://compute.north.internal.com/v1",
-                adminURL: "https://compute.north.internal.com/v1",
-                versionId: "1",
-                versionInfo: "https://compute.north.public.com/v1/",
-                versionList: "https://compute.north.public.com/"
-            },
-            {
-                id: 3,
-                tenantId: "1",
-                region: "East",
-                type: "compute",
-                publicURL: "https://compute.north.public.com/v1",
-                internalURL: "https://compute.north.internal.com/v1",
-                adminURL: "https://compute.north.internal.com/v1",
-                versionId: "1",
-                versionInfo: "https://compute.north.public.com/v1/",
-                versionList: "https://compute.north.public.com/"
-            },
-            {
-                id: 4,
-                tenantId: "1",
-                region: "West",
-                type: "compute",
-                publicURL: "https://compute.north.public.com/v1",
-                internalURL: "https://compute.north.internal.com/v1",
-                adminURL: "https://compute.north.internal.com/v1",
-                versionId: "1",
-                versionInfo: "https://compute.north.public.com/v1/",
-                versionList: "https://compute.north.public.com/"
-            },
-            {
-                id: 5,
-                tenantId: "1",
-                region: "Global",
-                type: "compute",
-                publicURL: "https://compute.north.public.com/v1",
-                internalURL: "https://compute.north.internal.com/v1",
-                adminURL: "https://compute.north.internal.com/v1",
-                versionId: "1",
-                versionInfo: "https://compute.north.public.com/v1/",
-                versionList: "https://compute.north.public.com/"
-            }
-        ]
+        {
+            id: 1,
+            tenantId: "1",
+            region: "North",
+            type: "compute",
+            publicURL: "https://compute.north.public.com/v1",
+            internalURL: "https://compute.north.internal.com/v1",
+            adminURL: "https://compute.north.internal.com/v1",
+            versionId: "1",
+            versionInfo: "https://compute.north.public.com/v1/",
+            versionList: "https://compute.north.public.com/"
+        },
+        {
+            id: 2,
+            tenantId: "1",
+            region: "South",
+            type: "compute",
+            publicURL: "https://compute.north.public.com/v1",
+            internalURL: "https://compute.north.internal.com/v1",
+            adminURL: "https://compute.north.internal.com/v1",
+            versionId: "1",
+            versionInfo: "https://compute.north.public.com/v1/",
+            versionList: "https://compute.north.public.com/"
+        },
+        {
+            id: 3,
+            tenantId: "1",
+            region: "East",
+            type: "compute",
+            publicURL: "https://compute.north.public.com/v1",
+            internalURL: "https://compute.north.internal.com/v1",
+            adminURL: "https://compute.north.internal.com/v1",
+            versionId: "1",
+            versionInfo: "https://compute.north.public.com/v1/",
+            versionList: "https://compute.north.public.com/"
+        },
+        {
+            id: 4,
+            tenantId: "1",
+            region: "West",
+            type: "compute",
+            publicURL: "https://compute.north.public.com/v1",
+            internalURL: "https://compute.north.internal.com/v1",
+            adminURL: "https://compute.north.internal.com/v1",
+            versionId: "1",
+            versionInfo: "https://compute.north.public.com/v1/",
+            versionList: "https://compute.north.public.com/"
+        },
+        {
+            id: 5,
+            tenantId: "1",
+            region: "Global",
+            type: "compute",
+            publicURL: "https://compute.north.public.com/v1",
+            internalURL: "https://compute.north.internal.com/v1",
+            adminURL: "https://compute.north.internal.com/v1",
+            versionId: "1",
+            versionInfo: "https://compute.north.public.com/v1/",
+            versionList: "https://compute.north.public.com/"
+        }
+    ]
   end
 
   def endpoints_response
@@ -173,6 +173,29 @@ module OpenStackResponses
         endpoints: endpoints_response_ary,
         endpoints_links: []
     }.to_json
+  end
+
+  def containers_response_ary
+    %w(goodbye helloworld)
+  end
+
+  def containers_response
+    [
+        {
+            hash: "451e372e48e0f6b1114fa0724aa79fa1",
+            last_modified: "2014-01-15T16:41:49.390270",
+            bytes: 14,
+            name: "goodbye",
+            content_type: "application/octet-stream"
+        },
+        {
+            hash: "ed076287532e86365e841e92bfc50d8c",
+            last_modified: "2014-01-15T16:37:43.427570",
+            bytes: 12,
+            name: "helloworld",
+            content_type: "application/octet-stream"
+        }
+    ].to_json
   end
 
   def simple_tenants_usages_response

@@ -162,13 +162,13 @@ RSpec.describe OpenStack::Connector do
     before do
       stub_request(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').
           with(
-          headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
+          headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
           body: '{"migrate":null}'
       ).
           to_return(:status => 202, :body => nil, :headers => {})
       stub_request(:post, "http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action").
           with(:body => "{\"os-migrateLive\":{\"host\":null,\"block_migration\":false,\"disk_over_commit\":false}}",
-               :headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent'=>"OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+               :headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
           to_return(:status => 200, :body => nil, :headers => {})
     end
 
@@ -182,14 +182,14 @@ RSpec.describe OpenStack::Connector do
     it 'requests migration' do
       connector.compute.migrate('0443e9a1254044d8b99f35eace132080')
       expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').with(
-                             headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
+                             headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
                              body: '{"migrate":null}')
     end
 
     it 'requests live migration' do
       connector.compute.live_migrate('0443e9a1254044d8b99f35eace132080')
       expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').with(
-                             headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
+                             headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
                              body: '{"os-migrateLive":{"host":null,"block_migration":false,"disk_over_commit":false}}')
     end
 
@@ -304,6 +304,38 @@ RSpec.describe OpenStack::Connector do
     end
 
   end
+
+  context '#object-store container list' do
+
+    let(:connector) { OpenStack::Connector.new 'object-store-tenant' }
+
+
+    before do
+      stub_request(:post, "http://servers.api.openstack.org:15000/v2.0/tokens").
+          with(:body => "{\"auth\":{\"passwordCredentials\":{\"username\":\"TestUser\",\"password\":\"vD5UPlUZsGf54WR7k3mR\"},\"tenantName\":\"object-store-tenant\"}}",
+               :headers => {'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'application/json', 'User-Agent' => 'Ruby'}).
+          to_return(:status => 200, :body => auth_token_response, :headers => {})
+      stub_request(:get, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57?format=json").
+          with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'Content-Type'=>'application/json', 'User-Agent'=>'OpenStack Ruby API 1.2.9', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+          to_return(:status => 200, :body => containers_response, :headers => {})
+    end
+
+    it 'authenticates with special tenant' do
+      connector.object_store.containers
+      expect(WebMock).to have_requested(:post, "http://servers.api.openstack.org:15000/v2.0/tokens").with(:body => "{\"auth\":{\"passwordCredentials\":{\"username\":\"TestUser\",\"password\":\"vD5UPlUZsGf54WR7k3mR\"},\"tenantName\":\"object-store-tenant\"}}",
+                                                                                                          :headers => {'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'application/json', 'User-Agent' => 'Ruby'})
+    end
+
+    it 'lists containers' do
+      connector.object_store.containers
+    end
+
+    it 'parses the response' do
+      expect(connector.object_store.containers).to eq(containers_response_ary)
+    end
+
+  end
+
 
   context '#network' do
 
