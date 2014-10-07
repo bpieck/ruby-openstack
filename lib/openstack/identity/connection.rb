@@ -28,6 +28,13 @@ module OpenStack
         OpenStack.symbolize_keys(tenant_list['tenant'])
       end
 
+      def endpoints
+        response = @connection.csreq('GET', @connection.service_host, "#{@connection.service_path}/endpoints", @connection.service_port, @connection.service_scheme)
+        OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+        endpoint_list = JSON.parse(response.body)
+        OpenStack.symbolize_keys(endpoint_list['endpoints'])
+      end
+
     end
   end
 end

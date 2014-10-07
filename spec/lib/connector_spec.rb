@@ -286,6 +286,25 @@ RSpec.describe OpenStack::Connector do
 
   end
 
+  context '#endpoints' do
+    before do
+      stub_request(:get, "http://servers.api.openstack.org:35357/v2.0/endpoints").
+          with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
+          to_return(:status => 200, :body => endpoints_response, :headers => {})
+    end
+
+    it 'requests endpoints from keystone' do
+      connector.identity.endpoints
+      expect(WebMock).to have_requested(:get, "http://servers.api.openstack.org:35357/v2.0/endpoints").
+                             with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
+    end
+
+    it 'parses the response' do
+      expect(connector.identity.endpoints).to eq(endpoints_response_ary)
+    end
+
+  end
+
   context '#network' do
 
     before do
