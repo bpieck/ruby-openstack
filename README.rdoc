@@ -515,10 +515,16 @@ Use OpenStack::Connector as Shortcut for several connections with same configura
     @connector ||= OpenStack::Connector.new
   end
 
+  def storage_connector
+    @storage_connector ||= OpenStack::Connector.new('other tenant')
+  end
+
   connector.compute.simple_tenant_usages
   connector.identity.tenants
   connector.metering.bandwidht project_id: PROJECT_ID
   connector.network.list_networks
+  connector.network.list_networks
+  storage_connector.object_storage.containers
   ...
 
 == Authors
