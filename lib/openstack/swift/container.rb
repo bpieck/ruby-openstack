@@ -114,6 +114,7 @@ module OpenStack
         path = "/#{@name.to_s}"
         path = (params.empty?) ? path : OpenStack.get_query_params(params, [:limit, :marker, :prefix, :path, :delimiter], path)
         response = @swift.connection.req("GET", URI.encode(path))
+        return [] if response.body.nil?
         begin
           OpenStack.symbolize_keys(JSON.parse(response.body)).inject([]) { |res, cur| res << cur[:name]; res }
         rescue JSON::ParserError => e
