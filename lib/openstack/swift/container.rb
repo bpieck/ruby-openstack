@@ -74,7 +74,8 @@ module OpenStack
         headers = metadatahash.inject({}) { |res, (k, v)| ((k.to_s.match /^X-Container-Meta-/i) ? res[k.to_s]=v : res["X-Container-Meta-#{k}"]=v); res }
         headers.merge!({'content-type' => 'application/json'})
         headers = {'X-Container-Read' => acl}
-        metadata_request(headers)      end
+        metadata_request(headers)
+      end
 
       # Size of the container (in bytes)
       def bytes

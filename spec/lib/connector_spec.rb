@@ -364,7 +364,7 @@ RSpec.describe OpenStack::Connector do
 
     it 'requests container-data' do
       connector.object_store.container('test')
-      expect(WebMock).to have_requested(:head, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57/test").with(:headers => {'Accept' => 'application/json', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => 'OpenStack Ruby API 1.2.12', 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
+      expect(WebMock).to have_requested(:head, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57/test").with(:headers => {'Accept' => 'application/json', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
     it 'responds to read_acl' do
