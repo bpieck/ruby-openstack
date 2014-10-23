@@ -21,7 +21,7 @@ module OpenStack
         path = "/#{URI.encode(@name.to_s)}"
         response = @swift.connection.req("HEAD", path)
         resphash = response.to_hash
-        meta = {:bytes => resphash["x-container-bytes-used"][0], :count => resphash["x-container-object-count"][0], :metadata => {}}
+        meta = {:bytes => resphash['x-container-bytes-used'][0], :count => resphash['x-container-object-count'][0], :metadata => {}, read_acl: resphash['x-container-read'], write_acl: resphash['x-container-write']}
         resphash.inject({}) { |res, (k, v)| meta[:metadata].merge!({k.gsub("x-container-meta-", "") => v.first}) if k.match(/^x-container-meta-/) }
         meta
       end
@@ -35,6 +35,26 @@ module OpenStack
         metahash = {}
         self.container_metadata[:metadata].each { |key, value| metahash[key.gsub(/x-container-meta-/, '').gsub(/%20/, ' ')] = URI.decode(value).gsub(/\+\-/, ' ') }
         metahash
+      end
+
+      def read_acl=(acl)
+        raise OpenStack::Exception::InvalidArgument.new('Incorrect formated ACL argument.') unless acl =~ /\A(?:\.r:.*|\.rlistings|AUTH_.*|LDAP_.*)\Z/
+        headers = {'X-Container-Read' => acl}
+        metadata_request(headers)
+      end
+
+      def read_acl
+        @metadata[:read_acl].is_a?(Array) ? @metadata[:read_acl][0] : ''
+      end
+
+      def write_acl=(acl)
+        raise OpenStack::Exception::InvalidArgument.new('Incorrect formated ACL argument.') unless acl =~ /\A(?:\.r:.*|\.rlistings|AUTH_.*|LDAP_.*)\Z/
+        headers = {'X-Container-Write' => acl}
+        metadata_request(headers)
+      end
+
+      def write_acl
+        @metadata[:write_acl].is_a?(Array) ? @metadata[:write_acl][0] : ''
       end
 
       # Sets the metadata for a container.  By passing a hash as an argument, you can set the metadata for an object.
@@ -53,14 +73,8 @@ module OpenStack
       def set_metadata(metadatahash)
         headers = metadatahash.inject({}) { |res, (k, v)| ((k.to_s.match /^X-Container-Meta-/i) ? res[k.to_s]=v : res["X-Container-Meta-#{k}"]=v); res }
         headers.merge!({'content-type' => 'application/json'})
-        begin
-          response = @swift.connection.req("POST", URI.encode("/#{@name.to_s}"), {:headers => headers})
-          true
-        rescue OpenStack::Exception::ItemNotFound => not_found
-          msg = "Cannot set metadata - container: \"#{@name}\" does not exist!.  #{not_found.message}"
-          raise OpenStack::Exception::ItemNotFound.new(msg, not_found.response_code, not_found.response_body)
-        end
-      end
+        headers = {'X-Container-Read' => acl}
+        metadata_request(headers)      end
 
       # Size of the container (in bytes)
       def bytes
@@ -215,6 +229,16 @@ module OpenStack
 
       def to_s # :nodoc:
         @name
+      end
+
+      private
+
+      def metadata_request(headers)
+        @swift.connection.req('POST', URI.encode("/#{@name.to_s}"), {:headers => headers})
+        true
+      rescue OpenStack::Exception::ItemNotFound => not_found
+        msg = "Cannot set metadata - container: \"#{@name}\" does not exist!.  #{not_found.message}"
+        raise OpenStack::Exception::ItemNotFound.new(msg, not_found.response_code, not_found.response_body)
       end
 
     end
