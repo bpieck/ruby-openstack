@@ -17,7 +17,7 @@ RSpec.describe OpenStack::Connector do
         to_return(:status => 200, :body => auth_token_response, :headers => {})
     stub_request(:get, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/extensions').
         with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
-        to_return(:status => 200, :body => "{\"extensions\":[{\"alias\":\"os-simple-tenant-usage\"}]}", :headers => {})
+        to_return(:status => 200, :body => "{\"extensions\":[{\"alias\":\"os-simple-tenant-usage\"},{\"alias\":\"os-security-groups\"}]}", :headers => {})
 
     @start, @end = (Time.now - 3600), Time.now
   end
@@ -64,7 +64,6 @@ RSpec.describe OpenStack::Connector do
   context '#list_servers_detail' do
 
 
-
     before do
       stub_request(:get, /http:\/\/servers\.api\.openstack\.org:8774\/v2\/fc394f2ab2df4114bde39905f800dc57\/servers\/detail(?:\?.+)?/).
           with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
@@ -104,9 +103,9 @@ RSpec.describe OpenStack::Connector do
     before do
       stub_request(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').
           with(
-          headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
-          body: '{"migrate":null}'
-      ).
+              headers: {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'},
+              body: '{"migrate":null}'
+          ).
           to_return(:status => 202, :body => nil, :headers => {})
       stub_request(:post, "http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action").
           with(:body => "{\"os-migrateLive\":{\"host\":null,\"block_migration\":false,\"disk_over_commit\":false}}",
@@ -184,6 +183,34 @@ RSpec.describe OpenStack::Connector do
 
     it 'parses the response for tenant fc394f2ab2df4114bde39905f800dc58' do
       expect(connector.compute.simple_tenant_usage(@start, @end, 'fc394f2ab2df4114bde39905f800dc58')).to eq(simple_tenant_usages_response('fc394f2ab2df4114bde39905f800dc58'))
+    end
+
+  end
+
+  context '#security_groups' do
+    before do
+      WebMock.stub_request(:put, "http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/os-security-groups/security_group_id").
+          with(:body => "{\"security_group\":{\"name\":\"outdatedSecGroup\",\"description\":\"this describes the new sec. group\"}}",
+               :headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
+          to_return(:status => 200, :body => '{"security_group":{"id":"security_group_id","description":"some description","name":"outdatedSecGroup","rules":[],"tenant_id":"fc394f2ab2df4114bde39905f800dc58"}}', :headers => {})
+    end
+
+    it 'authorizes securit_groups update first' do
+      connector.compute.update_security_group 'security_group_id', 'outdatedSecGroup', 'this describes the new sec. group'
+      expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:15000/v2.0/tokens').with(
+                             :body => "{\"auth\":{\"passwordCredentials\":{\"username\":\"TestUser\",\"password\":\"vD5UPlUZsGf54WR7k3mR\"},\"tenantName\":\"test_tenant\"}}",
+                             :headers => {'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'application/json', 'User-Agent' => 'Ruby'})
+    end
+
+    it 'requests update security groups' do
+      connector.compute.update_security_group 'security_group_id', 'outdatedSecGroup', 'this describes the new sec. group'
+      expect(WebMock).to have_requested(:put, "http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/os-security-groups/security_group_id").
+                             with(:body => "{\"security_group\":{\"name\":\"outdatedSecGroup\",\"description\":\"this describes the new sec. group\"}}",
+                                  :headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
+    end
+
+    it 'parses the response for security group update' do
+      expect(connector.compute.update_security_group('security_group_id', 'outdatedSecGroup', 'this describes the new sec. group')).to eq('security_group_id' => {id: 'security_group_id', description: 'some description', name: 'outdatedSecGroup', rules: [], tenant_id: 'fc394f2ab2df4114bde39905f800dc58'})
     end
 
   end
@@ -290,10 +317,10 @@ RSpec.describe OpenStack::Connector do
           with(:headers => {'Accept' => 'application/json', 'Connection' => 'Keep-Alive', 'Content-Type' => 'application/json', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
           to_return(:status => 200, :body => "", :headers => {'x-container-object-count' => '1', 'vary' => 'Accept-Encoding', 'server' => 'Apache', 'x-container-bytes-used-actual' => '3465216', 'x-container-bytes-used' => '3461240', 'x-container-write' => '.r:example.com,swift.example.com', 'x-container-read' => '.r:*', 'date' => 'Thu, 23 Oct 2014 03:35:09 GMT', 'content-type' => 'text/plain; charset=utf-8'})
       stub_request(:post, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57/test").
-          with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Read'=>'.rlistings', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+          with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Read' => '.rlistings', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
           to_return(:status => 200, :body => "", :headers => {})
       stub_request(:post, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57/test").
-          with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Write'=>'.r:*', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+          with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Write' => '.r:*', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'}).
           to_return(:status => 200, :body => "", :headers => {})
     end
 
@@ -323,14 +350,14 @@ RSpec.describe OpenStack::Connector do
       container = connector.object_store.container('test')
       container.read_acl = '.rlistings'
       expect(WebMock).to have_requested(:post, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57/test").
-                             with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Read'=>'.rlistings', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'})
+                             with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Read' => '.rlistings', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
     it 'sets new write_acl' do
       container = connector.object_store.container('test')
       container.write_acl = '.r:*'
       expect(WebMock).to have_requested(:post, "http://servers.api.openstack.org:8080/v1/AUTH_fc394f2ab2df4114bde39905f800dc57/test").
-                             with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Write'=>'.r:*', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'})
+                             with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Container-Write' => '.r:*', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
     end
 
   end
