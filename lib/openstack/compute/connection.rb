@@ -368,7 +368,6 @@ module OpenStack
         true
       end
 
-
       # os-simple-tenant-usage
 
       def simple_tenant_usage(start_time=(Time.now - 3600), end_time=Time.now, tenant_id=nil)
@@ -383,7 +382,6 @@ module OpenStack
           response_hash[:tenant_usages]
         end
       end
-
 
       #Security Groups:
       #Returns a hash with the security group IDs as keys:
@@ -419,6 +417,14 @@ module OpenStack
         check_extension 'os-security-groups', :security_groups
         data = JSON.generate(:security_group => {'name' => name, 'description' => description})
         response = @connection.req('POST', '/os-security-groups', {:data => data})
+        res = OpenStack.symbolize_keys(JSON.parse(response.body))
+        {res[:security_group][:id].to_s => res[:security_group]}
+      end
+
+      def update_security_group(id, name, description)
+        check_extension 'os-security-groups', :security_groups
+        data = JSON.generate(:security_group => { "name" => name, "description" => description})
+        response = @connection.req("PUT", "/os-security-groups/#{id}", {:data => data})
         res = OpenStack.symbolize_keys(JSON.parse(response.body))
         {res[:security_group][:id].to_s => res[:security_group]}
       end
