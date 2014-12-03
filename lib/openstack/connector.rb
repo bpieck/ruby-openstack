@@ -41,6 +41,8 @@ module OpenStack
                                      auth_url: OpenStack::Config[:auth_url],
                                      authtenant_name: (@auth_tenant || OpenStack::Config[:authtenant_name]),
                                      default_service_path: OpenStack::Config["#{service}_service_path".to_sym],
+                                     ca_file: (OpenStack::Config[:ca_file] || nil),
+                                     ssl_version: (OpenStack::Config[:ssl_version] || nil),
                                      service_type: service
       end
     end

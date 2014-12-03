@@ -505,10 +505,12 @@ See the class definitions for documentation on specific methods and operations.
 Use OpenStack::Connector as Shortcut for several connections with same configuration. First define OpenStack::Config as a constant Hash with keys auth_url, authtenant_name, password, user and optional keys: <service>_service_path: SERVICE_PATH (with service out of identity, compute, network and metering).
 
   OpenStack::Config = {
-    auth_url: AUTH_URL,
-    authtenant_name: AUTH_TENANT,
-    password: PASSWORD,
-    user: USERNAME
+    auth_url: AUTH_URL,           # required for OpenStack::Connector usage
+    authtenant_name: AUTH_TENANT, # required for OpenStack::Connector usage
+    password: PASSWORD,           # required for OpenStack::Connector usage
+    user: USERNAME,               # required for OpenStack::Connector usage
+    ca_file: 'path-to-ca-file',   # optional - if not set, ssl is not verified
+    ssl_version: SSL_VERSION      # optional - if ssl_version is needed to be specified
   }
 
   def connector
@@ -526,6 +528,7 @@ Use OpenStack::Connector as Shortcut for several connections with same configura
   connector.network.list_networks
   storage_connector.object_storage.containers
   ...
+
 
 == Authors
 
