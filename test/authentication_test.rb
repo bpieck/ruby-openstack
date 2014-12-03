@@ -5,10 +5,10 @@ class AuthenticationTest < Test::Unit::TestCase
   def test_good_authentication
     response = {'x-server-management-url' => 'http://server-manage.example.com/path', 'x-auth-token' => 'dummy_token'}
     response.stubs(:code).returns('204')
-    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true, started?: true)
+    server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, :finish => true, started?: true, :ca_file= => true, :ssl_version= => true)
     server.stubs(:get).returns(response)
     Net::HTTP.stubs(:new).returns(server)
-    connection = stub(:authuser => 'good_user',:authtenant => {:type=>"tenantName", :value=>'good_tenant'}, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v1.0", :service_type=>"compute", :authok= => true, :authtoken= => true, :service_host= => "", :service_path= => "", :service_path => "", :service_port= => "", :service_scheme= => "", :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', retries: 3, service_url_type: nil)
+    connection = stub(:authuser => 'good_user',:authtenant => {:type=>"tenantName", :value=>'good_tenant'}, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v1.0", :service_type=>"compute", :authok= => true, :authtoken= => true, :service_host= => "", :service_path= => "", :service_path => "", :service_port= => "", :service_scheme= => "", :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', retries: 3, service_url_type: nil, ca_cert: 'path-to-ca_cert', ssl_version: 'a-ssl-version')
     result = OpenStack::Authentication.init(connection)
     assert_equal result.class, OpenStack::AuthV10
   end
@@ -19,7 +19,7 @@ class AuthenticationTest < Test::Unit::TestCase
     server = mock(:use_ssl= => true, :verify_mode= => true, :start => true, started?: false)
     server.stubs(:get).returns(response)
     Net::HTTP.stubs(:new).returns(server)
-    connection = stub(:authuser => 'bad_user', :authtenant => {:type=>"tenantName", :value=>'good_tenant'}, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v1.0", :authok= => true, :authtoken= => true, :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', retries: 3, service_url_type: nil)
+    connection = stub(:authuser => 'bad_user', :authtenant => {:type=>"tenantName", :value=>'good_tenant'}, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v1.0", :authok= => true, :authtoken= => true, :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', retries: 3, service_url_type: nil, ca_cert: nil, ssl_version: nil)
     assert_raises(OpenStack::Exception::Authentication) do
       result = OpenStack::Authentication.init(connection)
     end
@@ -27,7 +27,7 @@ class AuthenticationTest < Test::Unit::TestCase
 
   def test_bad_hostname
     Net::HTTP.stubs(:new).raises(OpenStack::Exception::Connection)
-    connection = stub(:authuser => 'bad_user', :authtenant => {:type=>"tenantName", :value=>'good_tenant'}, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v1.0", :authok= => true, :authtoken= => true, :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', retries: 3, is_debug: false, service_url_type: nil)
+    connection = stub(:authuser => 'bad_user', :authtenant => {:type=>"tenantName", :value=>'good_tenant'}, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v1.0", :authok= => true, :authtoken= => true, :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', retries: 3, is_debug: false, service_url_type: nil, ca_cert: 'path-to-ca_cert')
     assert_raises(OpenStack::Exception::Connection) do
       result = OpenStack::Authentication.init(connection)
     end
@@ -44,7 +44,7 @@ class AuthenticationTest < Test::Unit::TestCase
   private
 
   def v2_auth_connection_stub
-    stub(:authuser => 'good_user', :auth_method => "password",:authtenant => {:type=>"tenantName", :value=>'good_tenant'} , :regions_list => {"North"=> [{:service=>"compute", :versionId=>nil}, {:service=>"nova", :versionId=>nil}], "South"=>[{:service=>"compute", :versionId=>nil}, {:service=>"nova", :versionId=>nil}] }, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v2.0", :authok= => true, :authtoken= => true, :service_host= => "", :service_path= => "", :service_path => "", :service_port= => "", :service_scheme= => "", :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', :service_type => "compute", :service_name => "cloudServers", :region => "South", retries: 3, service_url_type: nil)
+    stub(:authuser => 'good_user', :auth_method => "password",:authtenant => {:type=>"tenantName", :value=>'good_tenant'} , :regions_list => {"North"=> [{:service=>"compute", :versionId=>nil}, {:service=>"nova", :versionId=>nil}], "South"=>[{:service=>"compute", :versionId=>nil}, {:service=>"nova", :versionId=>nil}] }, :authkey => 'bad_key', :auth_host => "a.b.c", :auth_port => "443", :auth_scheme => "https", :auth_path => "/v2.0", :authok= => true, :authtoken= => true, :service_host= => "", :service_path= => "", :service_path => "", :service_port= => "", :service_scheme= => "", :proxy_host => nil, :proxy_port => nil, :api_path => '/foo', :service_type => "compute", :service_name => "cloudServers", :region => "South", retries: 3, service_url_type: nil, ca_cert: 'path-to-ca_cert', ssl_version: nil)
   end
 
   def get_test_auth_server
@@ -114,7 +114,7 @@ RESPONSE
 
     response = {'x-server-management-url' => 'http://server-manage.example.com/path', 'x-auth-token' => 'dummy_token'}
     response.stubs(:code => "200", :body => json_response)
-    server = mock(:use_ssl= => true, :verify_mode= => true, start: true, finish: true, started?: true)
+    server = mock(:use_ssl= => true, :verify_mode= => true, start: true, finish: true, started?: true, :ca_file= => true)
     server.stubs(:post).returns(response)
     return server
   end

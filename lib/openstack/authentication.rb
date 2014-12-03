@@ -25,7 +25,14 @@ module OpenStack
       @server = Net::HTTP::Proxy(connection.proxy_host, connection.proxy_port).new(connection.auth_host, connection.auth_port)
       if connection.auth_scheme == 'https'
         @server.use_ssl = true
-        @server.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        if connection.ca_cert.nil?
+          @server.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        else
+          @server.ca_file = connection.ca_cert
+          @server.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        end
+        # explicitly set the SSL version to use
+        @server.ssl_version= connection.ssl_version if !connection.ssl_version.nil?
       end
       @server.start
       @server
