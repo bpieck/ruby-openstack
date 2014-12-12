@@ -43,9 +43,7 @@ module OpenStack
       #   => [{:name=>"demo-standingcloud-lts", :id=>168867},
       #       {:name=>"demo-aicache1", :id=>187853}]
       def list_servers(options = {})
-        anti_cache_param="cacheid=#{Time.now.to_i}"
-        path = OpenStack.paginate(options).empty? ? "#{@connection.service_path}/servers?#{anti_cache_param}" : "#{@connection.service_path}/servers?#{OpenStack.paginate(options)}&#{anti_cache_param}"
-        response = @connection.csreq("GET", @connection.service_host, path, @connection.service_port, @connection.service_scheme)
+        response = @connection.csreq("GET", @connection.service_host, list_servers_path(options), @connection.service_port, @connection.service_scheme)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
         OpenStack.symbolize_keys(JSON.parse(response.body)["servers"])
       end
@@ -558,6 +556,15 @@ module OpenStack
       end
 
       private
+
+      def list_servers_path(options)
+        params = []
+        params << OpenStack.paginate(options) unless OpenStack.paginate(options).empty?
+        params << "all_tenants=1&tenant_id=#{options[:tenant_id]}" if options[:tenant_id]
+        params << "all_tenants=1" if options[:all_tenants]
+        params << "cacheid=#{Time.now.to_i}"
+        "#{@connection.service_path}/servers?#{params.join('&')}"
+      end
 
       def compute_floating_ip_info(response)
         response.inject([]) { |result, c| result << OpenStack::Compute::FloatingIPInfo.new(c) }

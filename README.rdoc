@@ -81,6 +81,14 @@ See the class definitions for documentation on specific methods and operations.
   >> os.servers
   => [{:name=>"Server1", :id=>110917}]
 
+  # Get a listing of all current servers from all tenants:
+  >> os.servers all_tenants: true
+  => [{:name=>"Server1", :id=>110917}, {:name=>"Server2", :id=>110918}]
+
+  # Get a listing of all current servers from another tenant than authorized for:
+  >> os.servers tenant_id: 'some-tenant-id'
+  => [{:name=>"Server2", :id=>110918}]
+
   # Access a specific server
   >> server = os.server(110917)
   >> server.name
