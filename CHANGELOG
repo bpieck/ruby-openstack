@@ -1,3 +1,35 @@
+Fri Dec 12 2014 Bente Pieck - 1.5.2
+  - added all_tenants and tenant_id option on compute os.servers
+
+Wed Dec 3 2014 Bente Pieck - 1.5.1
+  - added ssl verification options to connector
+
+Wed Dec 3 2014 Bente Pieck - 1.5.0
+  - merged ssl verification options from simonmcc
+
+Thu Nov 27 2014 Bente Pieck - 1.4.0
+  - merged sorrowless's update_security_group into branch and added tests
+
+Thu Oct 23 2014 Bente Pieck - 1.3.0
+  - added read_acl, write_acl, read_acl=, write_acl= to swift container
+
+Thu Oct 16 2014 Bente Pieck - 1.2.12
+  - minor fix for handling empty body of response to swift objects request
+
+Thu Oct 09 2014 Bente Pieck - 1.2.11
+  - added object_store to connector
+
+Tue Oct 07 2014 Bente Pieck - 1.2.9
+  - added object_store to connector
+
+Fri Aug 29 2014 Bente Pieck - 1.2.5
+  - added migrate and live_migrate to compute
+
+Thu Aug 28 2014 Bente Pieck - 1.2.4
+  - added identity connection
+  - added options to set
+  - added metering
+
 Tue Dec 03 2013 Marios Andreou (marios@redhat.com) - 1.1.2
   - much networking contributions and fixes from Ivan Ponomarev zipfer, pull 30
 
