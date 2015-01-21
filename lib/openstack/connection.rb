@@ -108,6 +108,7 @@ class Connection
       @authok = false
       @http = {}
       @quantum_version = 'v2.0' if @service_type == 'network'
+      @service_path = '/' if @service_type == 'network'
     end
 
     #specialised from of csreq for PUT object... uses body_stream if possible
