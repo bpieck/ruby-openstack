@@ -1,3 +1,3 @@
 module OpenStack
-  VERSION = '1.1.3.wp.0'
+  VERSION = '1.1.3.wp.1'
 end
