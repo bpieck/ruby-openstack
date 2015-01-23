@@ -71,6 +71,46 @@ module Compute
     end
     alias :refresh :populate
 
+    # Sends an API request to start this server. Takes no arguments
+    #
+    # Returns true if the API call succeeds
+    #
+    # >> server.start
+    # => true
+    def start
+      data = JSON.generate('os-start' => nil)
+      response = @compute.connection.csreq("POST",@svrmgmthost,"#{@svrmgmtpath}/servers/#{URI.encode(self.id.to_s)}/action",@svrmgmtport,@svrmgmtscheme,{'content-type' => 'application/json'},data)
+      OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+      true
+    end
+
+    # Sends an API request to stop this server. Takes no arguments
+    #
+    # Returns true if the API call succeeds
+    #
+    # >> server.stop
+    # => true
+    def stop
+      data = JSON.generate('os-stop' => nil)
+      response = @compute.connection.csreq("POST",@svrmgmthost,"#{@svrmgmtpath}/servers/#{URI.encode(self.id.to_s)}/action",@svrmgmtport,@svrmgmtscheme,{'content-type' => 'application/json'},data)
+      OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+      true
+     end
+
+    # Sends an API request to resume this server. Takes no arguments
+    #
+    # Returns true if the API call succeeds
+    #
+    # >> server.resume
+    # => true
+    def resume
+      data = JSON.generate('resume' => nil)
+      response = @compute.connection.csreq("POST",@svrmgmthost,"#{@svrmgmtpath}/servers/#{URI.encode(self.id.to_s)}/action",@svrmgmtport,@svrmgmtscheme,{'content-type' => 'application/json'},data)
+      OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+      true
+     end
+
+
     # Sends an API request to reboot this server.  Takes an optional argument for the type of reboot, which can be "SOFT" (graceful shutdown)
     # or "HARD" (power cycle).  The hard reboot is also triggered by server.reboot!, so that may be a better way to call it.
     #
