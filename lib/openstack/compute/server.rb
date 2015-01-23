@@ -71,6 +71,73 @@ module Compute
     end
     alias :refresh :populate
 
+    # API helper method to support the various server-admin-actions
+    #
+    # Returns true if the API call succeeds
+    #
+    def admin_action(raw_json)
+      data = JSON.generate(raw_json)
+      response = @compute.connection.csreq("POST",@svrmgmthost,"#{@svrmgmtpath}/servers/#{URI.encode(self.id.to_s)}/action",@svrmgmtport,@svrmgmtscheme,{'content-type' => 'application/json'},data)
+      OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+      true
+    end
+
+    # Sends an API request to pause this server. Takes no arguments
+    #
+    # >> server.pause
+    # => true
+    def pause
+      admin_action({'pause' => nil})
+    end
+    alias :unpause! :pause
+
+    # Sends an API request to unpause this server. Takes no arguments
+    #
+    # >> server.unpause
+    # => true
+    def unpause
+      admin_action({'unpause' => nil})
+    end
+    alias :pause! :unpause
+
+    # Sends an API request to suspend this server. Takes no arguments
+    #
+    # >> server.suspend
+    # => true
+    def suspend
+      admin_action({'suspend' => nil})
+    end
+    alias :resume! :suspend
+
+    # Sends an API request to resume this server. Takes no arguments
+    #
+    # Returns true if the API call succeeds
+    #
+    # >> server.resume
+    # => true
+    def resume
+      admin_action({'resume' => nil})
+    end
+    alias :suspend! :resume
+
+    # Sends an API request to lock this server. Takes no arguments
+    #
+    # >> server.lock
+    # => true
+    def lock
+      admin_action({'lock' => nil})
+    end
+    alias :unlock! :lock
+
+    # Sends an API request to unlock this server. Takes no arguments
+    #
+    # >> server.unlock
+    # => true
+    def unlock
+      admin_action({'unlock' => nil})
+    end
+    alias :lock! :unlock
+
     # Sends an API request to start this server. Takes no arguments
     #
     # Returns true if the API call succeeds
@@ -92,19 +159,6 @@ module Compute
     # => true
     def stop
       data = JSON.generate('os-stop' => nil)
-      response = @compute.connection.csreq("POST",@svrmgmthost,"#{@svrmgmtpath}/servers/#{URI.encode(self.id.to_s)}/action",@svrmgmtport,@svrmgmtscheme,{'content-type' => 'application/json'},data)
-      OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
-      true
-     end
-
-    # Sends an API request to resume this server. Takes no arguments
-    #
-    # Returns true if the API call succeeds
-    #
-    # >> server.resume
-    # => true
-    def resume
-      data = JSON.generate('resume' => nil)
       response = @compute.connection.csreq("POST",@svrmgmthost,"#{@svrmgmtpath}/servers/#{URI.encode(self.id.to_s)}/action",@svrmgmtport,@svrmgmtscheme,{'content-type' => 'application/json'},data)
       OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
       true
