@@ -116,9 +116,9 @@ module OpenStack
       #   >> server.adminPass
       #   => "NewServerSHMGpvI"
       def create_server(options)
-        raise OpenStack::Exception::MissingArgument, "Server name, flavorRef, and imageRef, must be supplied" unless (options[:name] && options[:flavorRef] && options[:imageRef])
+        raise OpenStack::Exception::MissingArgument, 'Server name, flavorRef, and imageRef, must be supplied' unless (options[:name] && options[:flavorRef] && options[:imageRef])
         options[:personality] = Personalities.get_personality(options[:personality])
-        options[:security_groups] = (options[:security_groups] || []).inject([]) { |res, c| res << {"name" => c}; res }
+        options[:security_groups] = (options[:security_groups] || []).inject([]) { |res, c| res << {'name' => c}; res }
         data = JSON.generate(:server => options)
         response = @connection.csreq("POST", @connection.service_host, "#{@connection.service_path}/servers", @connection.service_port, @connection.service_scheme, {'content-type' => 'application/json'}, data)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
@@ -127,6 +127,14 @@ module OpenStack
         server.adminPass = server_info['adminPass']
         return server
       end
+
+      def list_networks(options)
+        response = @connection.csreq("GET", @connection.service_host, list_networks_path(options), @connection.service_port, @connection.service_scheme)
+        OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
+        OpenStack.symbolize_keys(JSON.parse(response.body)["servers"])
+      end
+
+      alias :networks :list_networks
 
       # Returns an array of hashes listing available server images that you have access too,
       # including stock OpenStack Compute images and any that you have created.  The "id" key
@@ -564,6 +572,12 @@ module OpenStack
         params << "all_tenants=1" if options[:all_tenants]
         params << "cacheid=#{Time.now.to_i}"
         "#{@connection.service_path}/servers?#{params.join('&')}"
+      end
+
+      def list_networks_path(options)
+        params = []
+        params << OpenStack.paginate(options) unless OpenStack.paginate(options).empty?
+        "#{@connection.service_path}/os-networks?#{params.join('&')}"
       end
 
       def compute_floating_ip_info(response)
