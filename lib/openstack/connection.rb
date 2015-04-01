@@ -121,7 +121,7 @@ module OpenStack
       @ssl_version = options[:ssl_version]
       @authok = false
       @http = {}
-      @quantum_version = 'v2.0' if @service_type == 'network'
+      @quantum_version = '/v2.0' if @service_type == 'network'
     end
 
     #specialised from of csreq for PUT object... uses body_stream if possible
