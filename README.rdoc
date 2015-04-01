@@ -3,7 +3,6 @@
 == Description
 
 Ruby Openstack Compute, Object-Store, Block Storage and Network (Quantum) bindings for the OpenStack API.
-a
 http://api.openstack.org/api-reference.html
 
 Currently supports both v1.0 and v2.0 (keystone) auth.
@@ -136,6 +135,9 @@ See the class definitions for documentation on specific methods and operations.
   # Delete the new server
   >> newserver.delete!
   => true
+
+  # list available networks
+  >> networks = os.networks
 
 === Compute API extensions.
 
