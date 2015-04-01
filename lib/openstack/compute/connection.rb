@@ -128,10 +128,10 @@ module OpenStack
         return server
       end
 
-      def list_networks(options)
+      def list_networks(options={})
         response = @connection.csreq("GET", @connection.service_host, list_networks_path(options), @connection.service_port, @connection.service_scheme)
         OpenStack::Exception.raise_exception(response) unless response.code.match(/^20.$/)
-        OpenStack.symbolize_keys(JSON.parse(response.body)["servers"])
+        OpenStack.symbolize_keys(JSON.parse(response.body)['networks'])
       end
 
       alias :networks :list_networks

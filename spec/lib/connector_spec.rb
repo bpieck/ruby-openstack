@@ -99,6 +99,34 @@ RSpec.describe OpenStack::Connector do
 
   end
 
+  context '#list_networks' do
+
+
+    before do
+      stub_request(:get, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/os-networks').
+        with(:headers => {'Accept'=>'application/json', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection'=>'Keep-Alive', 'User-Agent'=>'OpenStack Ruby API 1.5.3', 'X-Auth-Token'=>'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token'=>'aaaaa-bbbbb-ccccc-dddd'}).
+        to_return(:status => 200, :body => '{"networks": [{"bridge": null, "vpn_public_port": null, "dhcp_start": null, "bridge_interface": null, "updated_at": null, "id": "231ad16d-1466-4d8a-8191-4f0c5e1d9398", "cidr_v6": null, "deleted_at": null, "gateway": null, "rxtx_base": null, "label": "hitnet", "priority": null, "project_id": null, "vpn_private_address": null, "deleted": null, "vlan": null, "broadcast": null, "netmask": null, "injected": null, "cidr": null, "vpn_public_address": null, "multi_host": null, "dns2": null, "created_at": null, "host": null, "gateway_v6": null, "netmask_v6": null, "dns1": null}]}', :headers => {})
+    end
+
+    it 'authorizes #networks first' do
+      connector.compute.networks
+      expect(WebMock).to have_requested(:post, 'http://servers.api.openstack.org:15000/v2.0/tokens').with(
+                           :body => "{\"auth\":{\"passwordCredentials\":{\"username\":\"TestUser\",\"password\":\"vD5UPlUZsGf54WR7k3mR\"},\"tenantName\":\"test_tenant\"}}",
+                           :headers => {'Accept' => '*/*', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Content-Type' => 'application/json', 'User-Agent' => 'Ruby'})
+    end
+
+    it 'requests networks' do
+      connector.compute.networks
+      expect(WebMock).to have_requested(:get, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/os-networks').
+                           with(:headers => {'Accept' => 'application/json', 'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'Connection' => 'Keep-Alive', 'User-Agent' => "OpenStack Ruby API #{OpenStack::VERSION}", 'X-Auth-Token' => 'aaaaa-bbbbb-ccccc-dddd', 'X-Storage-Token' => 'aaaaa-bbbbb-ccccc-dddd'})
+    end
+
+    it 'parses the response' do
+      expect(connector.compute.networks).to eq([{:bridge=>nil, :vpn_public_port=>nil, :dhcp_start=>nil, :bridge_interface=>nil, :updated_at=>nil, :id=>'231ad16d-1466-4d8a-8191-4f0c5e1d9398', :cidr_v6=>nil, :deleted_at=>nil, :gateway=>nil, :rxtx_base=>nil, :label=>"hitnet", :priority=>nil, :project_id=>nil, :vpn_private_address=>nil, :deleted=>nil, :vlan=>nil, :broadcast=>nil, :netmask=>nil, :injected=>nil, :cidr=>nil, :vpn_public_address=>nil, :multi_host=>nil, :dns2=>nil, :created_at=>nil, :host=>nil, :gateway_v6=>nil, :netmask_v6=>nil, :dns1=>nil}])
+    end
+
+  end
+
   context '#migration' do
     before do
       stub_request(:post, 'http://servers.api.openstack.org:8774/v2/fc394f2ab2df4114bde39905f800dc57/servers/0443e9a1254044d8b99f35eace132080/action').
