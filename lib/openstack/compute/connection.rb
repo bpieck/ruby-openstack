@@ -484,8 +484,7 @@ module OpenStack
       def get_floating_ips
         check_extension 'os-floating-ips'
         response = @connection.req('GET', '/os-floating-ips')
-        JSON.parse(response.body)['floating_ips']
-        res.inject([]) { |result, c| result<< OpenStack::Compute::FloatingIPAddress.new(c) }
+        JSON.parse(response.body)['floating_ips'].inject([]) { |result, c| result<< OpenStack::Compute::FloatingIPAddress.new(c) }
       end
 
       alias :floating_ips :get_floating_ips
